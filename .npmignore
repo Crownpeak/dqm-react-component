@@ -1,0 +1,60 @@
+# Source files
+src/
+server/
+server-ui/
+
+# Development files
+.vscode/
+.idea/
+*.iml
+.env
+.env.local
+.env.*.local
+
+# Build configuration
+vite.config.ts
+tsconfig.*.json
+eslint.config.js
+
+# Development dependencies
+node_modules/
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Git
+.git/
+.gitignore
+.github/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Redis
+dump.rdb
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation (dev-only)
+index.html
+
+# Keep these in package
+!dist/
+!README.md
+!LICENSE
+!CHANGELOG.md
+!QUICKSTART.md
+!EXAMPLES.md
+!AUTHENTICATION.md
+!BACKEND-API.md
+!DEVELOPMENT.md
+!PUBLISHING.md
