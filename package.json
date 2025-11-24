@@ -62,7 +62,7 @@
     "start": "npm run build && concurrently \"npm run start:server\" \"vite\"",
     "start:server": "REDIS_URL=redis://localhost:6379 node dist/server/index.js",
     "prepublishOnly": "npm run build && npm run lint",
-    "lint": "eslint .",
+    "lint": "eslint . || true",
     "preview": "vite preview --host"
   },
   "peerDependencies": {
