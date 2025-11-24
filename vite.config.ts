@@ -2,6 +2,7 @@ import {defineConfig} from 'vite'
 import react from "@vitejs/plugin-react-swc"
 import {resolve} from 'path'
 import dts from 'vite-plugin-dts'
+import MagicString from 'magic-string'
 
 // Plugin to remove console.log in production builds
 const removeConsolePlugin = () => {
@@ -9,9 +10,59 @@ const removeConsolePlugin = () => {
         name: 'remove-console',
         transform(code: string, id: string) {
             if (id.includes('node_modules')) return null;
+
+            // Use magic-string for proper source map generation
+            const s = new MagicString(code);
+            let hasReplaced = false;
+
             // Remove console.log statements, keep console.warn and console.error
-            // Match complete statements including multiline
-            return code.replace(/console\.log\s*\([^;]*\);?/g, '/* removed console.log */');
+            // Use a more robust approach to handle nested parentheses
+            const regex = /console\.log\s*\(/g;
+            let match;
+
+            while ((match = regex.exec(code)) !== null) {
+                // Find the matching closing parenthesis
+                let depth = 1;
+                let pos = match.index + match[0].length;
+                let inString = false;
+                let stringChar = '';
+                let escaped = false;
+
+                while (pos < code.length && depth > 0) {
+                    const char = code[pos];
+
+                    if (escaped) {
+                        escaped = false;
+                    } else if (char === '\\') {
+                        escaped = true;
+                    } else if (!inString && (char === '"' || char === "'" || char === '`')) {
+                        inString = true;
+                        stringChar = char;
+                    } else if (inString && char === stringChar) {
+                        inString = false;
+                    } else if (!inString) {
+                        if (char === '(') depth++;
+                        else if (char === ')') depth--;
+                    }
+
+                    pos++;
+                }
+
+                // Check if there's a semicolon right after
+                if (pos < code.length && code[pos] === ';') {
+                    pos++;
+                }
+
+                s.overwrite(match.index, pos, '/* removed console.log */');
+                hasReplaced = true;
+            }
+
+            if (!hasReplaced) return null;
+
+            return {
+                code: s.toString(),
+                map: s.generateMap({ hires: true })
+            };
         }
     };
 };
