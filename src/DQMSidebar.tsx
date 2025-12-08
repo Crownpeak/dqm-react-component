@@ -109,6 +109,8 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
 
     // Separate state for DISPLAY ONLY - shows which highlight is currently visible (passive tracking)
     const [visibleHighlight, setVisibleHighlight] = useState<number>(0);
+    // State to toggle JavaScript execution in iframe
+    const [scriptsDisabled, setScriptsDisabled] = useState<boolean>(true);
 
     const contentBoxRef = React.useRef<HTMLDivElement>(null);
 
@@ -2187,6 +2189,27 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                         <OpenInNewIcon fontSize="small"/>
                                                     </IconButton>
                                                 </Tooltip>
+                                                {/* Scripts toggle button - only show in browser view */}
+                                                {highlightViewMode === 'browser' && (
+                                                    <Tooltip title={scriptsDisabled ? "Enable JavaScript" : "Disable JavaScript"} placement="top">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => setScriptsDisabled(!scriptsDisabled)}
+                                                            sx={{
+                                                                color: scriptsDisabled ? 'text.secondary' : 'primary.main',
+                                                                '&:hover': {
+                                                                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                                                                },
+                                                            }}
+                                                            aria-label={scriptsDisabled ? "Enable JavaScript" : "Disable JavaScript"}
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M16 18L22 12L16 6"/>
+                                                                <path d="M8 6L2 12L8 18"/>
+                                                            </svg>
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                )}
                                             </Box>
                                         </Box>
 
@@ -2197,7 +2220,8 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                                      currentHighlight={currentHighlight}
                                                                      clickedIndicator={clickedIndicator}
                                                                      onHighlightsFound={setTotalHighlights}
-                                                                     onVisibleHighlightChange={setVisibleHighlight}/>
+                                                                     onVisibleHighlightChange={setVisibleHighlight}
+                                                                     scriptsDisabled={scriptsDisabled}/>
                                             ) : (
                                                 <ShadowDOMRenderer
                                                     html={highlightedContent}

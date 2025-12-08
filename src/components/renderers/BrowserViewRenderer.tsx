@@ -7,7 +7,8 @@ export const BrowserViewRenderer: React.FC<{
     onHighlightsFound?: (count: number) => void;
     clickedIndicator: number;
     onVisibleHighlightChange?: (index: number) => void; // Passive: only for display, never triggers scroll
-}> = ({html, currentHighlight, onHighlightsFound, onVisibleHighlightChange, clickedIndicator}) => {
+    scriptsDisabled?: boolean;
+}> = ({html, currentHighlight, onHighlightsFound, onVisibleHighlightChange, clickedIndicator, scriptsDisabled = true}) => {
     const iframeRef = React.useRef<HTMLIFrameElement>(null);
     const isProgrammaticScrollRef = React.useRef<boolean>(false);
 
@@ -210,7 +211,7 @@ export const BrowserViewRenderer: React.FC<{
                     border: '1px solid #e0e0e0',
                     borderRadius: '8px',
                 }}
-                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                sandbox={scriptsDisabled ? "allow-same-origin allow-popups allow-forms" : "allow-same-origin allow-scripts allow-popups allow-forms"}
             />
             {/*<div dangerouslySetInnerHTML={{__html: html}}></div>*/}
         </>
