@@ -198,7 +198,7 @@ function calculateContentOffset(
 /**
  * Deep comparison for DomPresenceResult to avoid unnecessary re-renders.
  *
- * Compares all properties including nested rect and contentOffset values selector,
+ * Compares all properties including nested rect and contentOffset values.
  *
  * @param {DomPresenceResult} a - First result to compare
  * @param {DomPresenceResult} b - Second result to compare

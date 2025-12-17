@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,13 +44,13 @@
 </head>
 <body>
     <div class="container">
-        <p><a href="/">← Zurück zur Übersicht</a></p>
+        <p><a href="/">← Back to overview</a></p>
         
         <h1>📦 ES Module Import Integration</h1>
         
         <div class="info-box">
-            <h2>So funktioniert's</h2>
-            <p>Das Widget wird als ES Module importiert und manuell initialisiert.</p>
+            <h2>How it works</h2>
+            <p>The widget is imported as an ES module and initialized manually.</p>
             <pre>&lt;script type="module"&gt;
   import { initDQMWidget } from '/dist/dqm-widget.esm.js';
   
@@ -63,15 +63,15 @@
         </div>
         
         <div class="info-box">
-            <h2>Manuelle Steuerung</h2>
-            <p>Mit <code>window.DQM_MANUAL_INIT = true</code> kann die Auto-Initialisierung verhindert werden:</p>
+            <h2>Manual control</h2>
+            <p>Set <code>window.DQM_MANUAL_INIT = true</code> to prevent auto-initialization:</p>
             <pre>&lt;script&gt;
   window.DQM_MANUAL_INIT = true;
 &lt;/script&gt;
 &lt;script type="module"&gt;
   import { initDQMWidget } from '/dist/dqm-widget.esm.js';
   
-  // Später manuell initialisieren
+    // Initialize later on demand
   document.getElementById('btn').onclick = () => {
     initDQMWidget({ initialOpen: true });
   };
@@ -80,14 +80,14 @@
         
         <div class="info-box">
             <h2>Status</h2>
-            <p>✅ Das Widget sollte als FAB unten rechts erscheinen.</p>
+            <p>✅ The widget should appear as a FAB in the bottom right.</p>
         </div>
         
         <div class="info-box">
-            <h2>Test-Content</h2>
+            <h2>Test content</h2>
             <img src="placeholder.jpg">
             <form>
-                <input type="text" placeholder="Name ohne Label">
+                <input type="text" placeholder="Name without label">
             </form>
         </div>
     </div>

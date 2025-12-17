@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -33,14 +33,14 @@
 </head>
 <body>
     <div class="container">
-        <p><a href="/">← Zurück zur Übersicht</a></p>
+        <p><a href="/">← Back to overview</a></p>
         
         <h1>📜 IIFE Script-Tag Integration</h1>
         
-        <div class="info-box">
-            <h2>So funktioniert's</h2>
-            <p>Das Widget wird über ein einfaches <code>&lt;script&gt;</code>-Tag geladen und initialisiert sich automatisch.</p>
-            <pre>&lt;!-- 1. Konfiguration setzen (optional) --&gt;
+                <div class="info-box">
+                        <h2>How it works</h2>
+                        <p>The widget loads via a simple <code>&lt;script&gt;</code> tag and auto-initializes.</p>
+                        <pre>&lt;!-- 1. Set configuration (optional) --&gt;
 &lt;script&gt;
   window.DQM_CONFIG = {
     apiKey: 'your-api-key',
@@ -48,23 +48,23 @@
   };
 &lt;/script&gt;
 
-&lt;!-- 2. Widget laden --&gt;
+&lt;!-- 2. Load widget --&gt;
 &lt;script src="/dist/dqm-widget.iife.js"&gt;&lt;/script&gt;</pre>
         </div>
         
         <div class="info-box">
             <h2>Status</h2>
-            <p>✅ Das Widget sollte als Floating Action Button (FAB) unten rechts erscheinen.</p>
-            <p>Klicke darauf, um die DQM Sidebar zu öffnen.</p>
+                        <p>✅ The widget should appear as a Floating Action Button (FAB) in the bottom right.</p>
+                        <p>Click it to open the DQM sidebar.</p>
         </div>
         
         <div class="info-box">
-            <h2>Test-Content mit Accessibility-Problemen</h2>
-            <img src="placeholder.jpg"><!-- Missing alt -->
-            <a href="#">Hier klicken</a><!-- Non-descriptive -->
-            <p style="color: #ccc; background: #ddd;">Schlechter Kontrast</p>
+                        <h2>Test content with accessibility issues</h2>
+                        <img src="placeholder.jpg"><!-- Missing alt -->
+                        <a href="#">Click here</a><!-- Non-descriptive -->
+                        <p style="color: #ccc; background: #ddd;">Poor contrast</p>
         </div>
-    </div>w
+    </div>
 
     <!-- DQM Widget Integration -->
     <script>

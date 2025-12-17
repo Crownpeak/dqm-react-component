@@ -49,8 +49,8 @@ export type OverlayOffsetPosition = 'top' | 'bottom' | 'left' | 'right';
  */
 export interface OverlayConfig {
   /**
-  * CSS selector for the overlay element to detect.
-   * 
+   * CSS selector for the overlay element to detect.
+   *
    * Set to `null` or empty string to disable auto-detection.
    */
   selector?: string | null;
