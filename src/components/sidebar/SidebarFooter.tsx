@@ -1,10 +1,8 @@
 import React from "react";
 import {Box} from "@mui/material";
-import type { OverlayInfo } from "../../utils/useDomPresence";
 
-export const SidebarFooter = ({children, overlayInfo}: {
+export const SidebarFooter = ({children}: {
     children: React.ReactNode;
-    overlayInfo: OverlayInfo
 }) => (
     <Box
         sx={{
@@ -14,7 +12,6 @@ export const SidebarFooter = ({children, overlayInfo}: {
             background: 'white',
             display: 'flex',
             justifyContent: 'center',
-            bottom: overlayInfo.present ? (overlayInfo.contentOffset['bottom'] + 5) + 'px' : '0px',
             zIndex: 10,
         }}
     >

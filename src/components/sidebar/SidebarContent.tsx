@@ -1,20 +1,13 @@
 import {styled} from "@mui/material/styles";
 import {Box} from "@mui/material";
-import type { OverlayInfo } from "../../utils/useDomPresence";
 
-interface SidebarContentProps {
-    overlayInfo: OverlayInfo;
-}
-
-export const SidebarContent = styled(Box, {
-    shouldForwardProp: (prop) => prop !== 'overlayInfo'
-})<SidebarContentProps>(({theme, overlayInfo}) => ({
+export const SidebarContent = styled(Box)(({theme}) => ({
     flex: 1,
     overflow: 'auto',
     paddingTop: theme.spacing(2),
     paddingLeft: theme.spacing(2),
     paddingRight: theme.spacing(2),
-    paddingBottom: overlayInfo.present && overlayInfo.position === 'bottom' ? theme.spacing(2) : 0,
+    paddingBottom: 0,
     borderLeft: `1px solid ${theme.palette.divider}`,
     '&::-webkit-scrollbar': {
         width: 8,

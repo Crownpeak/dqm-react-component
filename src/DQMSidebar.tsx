@@ -1186,7 +1186,6 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                 textAlign: 'center',
                                 boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
                             }}
-                            pb={overlayInfo.present && overlayInfo.position === 'bottom' ? '50px' : 0}
                         >
                             <svg
                                 style={{width: '24px', height: '24px', marginBottom: '1rem'}}
@@ -1279,7 +1278,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                             </HeaderButton>
                         </SidebarHeader>
 
-                        <SidebarContent overlayInfo={overlayInfo}>
+                        <SidebarContent>
                             <ErrorBoundary>
                                 {analysisState === 'idle' && isAuthenticated && (
                                     <Box p={4} display="flex" flexDirection="column" alignItems="center"
@@ -1305,12 +1304,11 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                 )}
 
                                 {analysisState === 'analyzing' && (
-                                    <SidebarSkeleton expanded={expanded} overlayInfo={overlayInfo}/>
+                                    <SidebarSkeleton expanded={expanded}/>
                                 )}
 
                                 {analysisState === 'error' && authError && (
-                                    <Box
-                                        pb={overlayInfo.present ? (overlayInfo.contentOffset['bottom'] - 10) + 'px' : 0}>
+                                    <Box>
                                         <Alert
                                             severity={authError.includes('Permission denied') ? 'warning' : 'error'}
                                         >
@@ -1327,8 +1325,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                 )}
 
                                 {analysisState === 'error' && !authError && (
-                                    <Box
-                                        pb={overlayInfo.present ? (overlayInfo.contentOffset['bottom'] - 10) + 'px' : 0}>
+                                    <Box>
                                         <Alert
                                             severity="error"
                                             action={
@@ -1354,8 +1351,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                 )}
 
                                 {analysisState === 'completed' && analysisData && (
-                                    <Box
-                                        pb={overlayInfo.present ? (overlayInfo.contentOffset['bottom'] - 10) + 'px' : 0}>
+                                    <Box>
                                         {/* Quality Overview */}
                                         <QualityOverviewCard>
                                             <Typography variant="h6" fontWeight={700} gutterBottom sx={{
@@ -1842,7 +1838,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                             </ErrorBoundary>
                         </SidebarContent>
 
-                        <SidebarFooter overlayInfo={overlayInfo}>
+                        <SidebarFooter>
                             <Button
                                 // Removed large custom font size to use theme defaults
                                 onClick={analysisState === 'completed' ? startAnalysis : startAnalysis}
