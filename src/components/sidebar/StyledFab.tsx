@@ -1,12 +1,13 @@
 import React from "react";
 import {Fab} from "@mui/material";
+import type {OverlayInfo} from "../../utils/useDomPresence.tsx";
 
-export const StyledFab = ({...props}: React.ComponentProps<typeof Fab>) => (
+export const StyledFab = ({overlayInfo, ...props}: React.ComponentProps<typeof Fab> & { overlayInfo: OverlayInfo }) => (
     <Fab
         {...props}
         sx={{
             position: 'fixed',
-            bottom: 35,
+            bottom: overlayInfo.present ? (overlayInfo.contentOffset['bottom'] + 30) + 'px' : 35,
             right: 0,
             zIndex: 1400,
             background: 'linear-gradient(135deg, #1f2937 0%, #475260 100%)',

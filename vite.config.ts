@@ -69,9 +69,10 @@ const removeConsolePlugin = () => {
 
 export default defineConfig(({mode}) => {
     const isLibrary = mode === 'library';
+    const isWidget = mode === 'widget';
 
     if (isLibrary) {
-        // Library build configuration
+        // Library build configuration - externalized dependencies for npm package
         return {
             plugins: [
                 react({
@@ -116,6 +117,58 @@ export default defineConfig(({mode}) => {
                 include: [
                     '@emotion/react',
                     '@emotion/styled',
+                    '@mui/material',
+                    '@mui/icons-material'
+                ]
+            }
+        };
+    }
+
+    if (isWidget) {
+        // Widget build configuration - fully bundled for standalone usage in any website
+        // No external dependencies - everything is bundled into a single file
+        return {
+            plugins: [
+                react({
+                    jsxImportSource: '@emotion/react',
+                }),
+                removeConsolePlugin()
+            ],
+            define: {
+                'process.env.NODE_ENV': JSON.stringify('production'),
+            },
+            build: {
+                lib: {
+                    entry: resolve(__dirname, 'src/html-pages/DQMWidget.tsx'),
+                    name: 'CrownpeakDQM',
+                    formats: ['iife', 'es'],
+                    fileName: (format) => `dqm-widget.${format === 'iife' ? 'iife' : 'esm'}.js`
+                },
+                rollupOptions: {
+                    // NO external - bundle everything for standalone usage
+                    output: {
+                        // Ensure single file output
+                        inlineDynamicImports: true,
+                        // Export initDQMWidget for ESM consumers
+                        exports: 'named',
+                    }
+                },
+                minify: 'terser',
+                terserOptions: {
+                    compress: {
+                        drop_console: false, // Keep console.warn/error for debugging
+                        pure_funcs: ['console.log'], // Remove console.log only
+                    },
+                },
+                sourcemap: false,
+                emptyOutDir: false, // Don't clear dist - we want both lib and widget outputs
+                outDir: 'dist',
+            },
+            optimizeDeps: {
+                include: [
+                    '@emotion/react',
+                    '@emotion/styled',
+                    '@emotion/cache',
                     '@mui/material',
                     '@mui/icons-material'
                 ]

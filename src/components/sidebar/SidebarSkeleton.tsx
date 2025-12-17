@@ -13,12 +13,14 @@ import {
 } from "@mui/material";
 import {ExpandMore as ExpandMoreIcon} from "@mui/icons-material";
 import {QualityOverviewCard, CategoryCard, FailedCheckpointsCard} from "../cards";
+import type { OverlayInfo } from "../../utils/useDomPresence";
 
 export const SidebarSkeleton: React.FC<{
     expanded: boolean;
-}> = ({expanded}) => {
+    overlayInfo: OverlayInfo;
+}> = ({expanded, overlayInfo}) => {
     return (
-        <Box pb={2}>
+        <Box pb={overlayInfo.present && overlayInfo.position === 'bottom' ? '50px' : 0}>
             {/* Quality Overview Card Skeleton */}
             <QualityOverviewCard>
                 <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>

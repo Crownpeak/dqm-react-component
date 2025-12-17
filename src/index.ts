@@ -11,6 +11,15 @@ export type {
   Checkpoint,
   DQMConfig,
   OAuth2Config,
-  AuthMode
+  AuthMode,
+  OverlayConfig,
+  OverlayOffsetPosition
 } from './types';
 
+// Overlay hook exports (for advanced usage)
+export { useOverlayResistant } from './utils/useDomPresence';
+export type { 
+  OverlayInfo, 
+  OverlayPosition,
+  UseOverlayResistantConfig 
+} from './utils/useDomPresence';

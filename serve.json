@@ -1,0 +1,12 @@
+{
+  "public": ".",
+  "cleanUrls": false,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/", "destination": "/public/index.html" },
+    { "source": "/test/widget-standalone", "destination": "/test/widget-standalone.html" },
+    { "source": "/test/demo-iife", "destination": "/test/demo-iife.html" },
+    { "source": "/test/demo-esm", "destination": "/test/demo-esm.html" },
+    { "source": "/test/demo-dynamic", "destination": "/test/demo-dynamic.html" }
+  ]
+}

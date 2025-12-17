@@ -192,3 +192,190 @@ function App() {
 }
 ```
 
+## With Overlay/Toolbar Configuration
+
+Use `overlayConfig` to offset the sidebar when toolbars or overlays are present.
+
+### Auto-Detection (Toolbar Selector)
+
+```tsx
+import { DQMSidebar } from '@crownpeak/dqm-react-component';
+
+function App() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  return (
+    <DQMSidebar
+      open={sidebarOpen}
+      onClose={() => setSidebarOpen(false)}
+      onOpen={() => setSidebarOpen(true)}
+      config={{
+        overlayConfig: {
+          // Example toolbar anchored to the top edge
+          selector: '.preview-toolbar',
+          validateIframe: false
+        }
+      }}
+    />
+  );
+}
+```
+### Auto-Detection (Custom Selector)
+
+```tsx
+import { DQMSidebar } from '@crownpeak/dqm-react-component';
+
+function App() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <DQMSidebar
+      open={open}
+      onClose={() => setOpen(false)}
+      onOpen={() => setOpen(true)}
+      config={{
+        overlayConfig: {
+          selector: 'iframe#my-overlay',
+        }
+      }}
+    />
+  );
+}
+```
+
+### Custom Selector
+
+```tsx
+import { DQMSidebar } from '@crownpeak/dqm-react-component';
+
+function App() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <DQMSidebar
+      open={open}
+      onClose={() => setOpen(false)}
+      onOpen={() => setOpen(true)}
+      config={{
+        overlayConfig: {
+          // Custom selector for your admin toolbar
+          selector: '.admin-toolbar-header',
+          // Disable iFrame validation for non-iFrame elements
+          validateIframe: false,
+        }
+      }}
+    />
+  );
+}
+```
+
+### Manual Offset (for Cross-Origin iFrames)
+
+When the overlay is a cross-origin iFrame that fills the entire screen but has
+a smaller internal toolbar, auto-detection won't work. Use manual offset:
+
+```tsx
+import { DQMSidebar } from '@crownpeak/dqm-react-component';
+
+function App() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <DQMSidebar
+      open={open}
+      onClose={() => setOpen(false)}
+      onOpen={() => setOpen(true)}
+      config={{
+        overlayConfig: {
+          // Manual offset: 50px from the top
+          manualOffset: {
+            position: 'top',
+            pixels: 50
+          }
+        }
+      }}
+    />
+  );
+}
+```
+
+### Disable Overlay Detection
+
+```tsx
+import { DQMSidebar } from '@crownpeak/dqm-react-component';
+
+function App() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <DQMSidebar
+      open={open}
+      onClose={() => setOpen(false)}
+      onOpen={() => setOpen(true)}
+      config={{
+        overlayConfig: {
+          // Disable all overlay detection
+          selector: null
+        }
+      }}
+    />
+  );
+}
+```
+
+### Disable Logout Button
+
+```tsx
+import { DQMSidebar } from '@crownpeak/dqm-react-component';
+
+function App() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <DQMSidebar
+      open={open}
+      onClose={() => setOpen(false)}
+      onOpen={() => setOpen(true)}
+      config={{
+        // Host app controls session lifecycle; hide logout control in the sidebar
+        disableLogout: true,
+      }}
+    />
+  );
+}
+```
+
+### Advanced: Using the Hook Directly
+
+For custom UI components that need overlay information:
+
+```tsx
+import { useOverlayResistant } from '@crownpeak/dqm-react-component';
+import type { OverlayInfo } from '@crownpeak/dqm-react-component';
+
+function MyFloatingButton() {
+  const overlay: OverlayInfo = useOverlayResistant({
+    selector: '...',
+    validateIframe: true,
+    pollMs: 1000,
+  });
+
+  return (
+    <button
+      style={{
+        position: 'fixed',
+        top: overlay.present 
+          ? `${overlay.contentOffset.top + 16}px` 
+          : '16px',
+        right: '16px',
+        zIndex: 9999,
+      }}
+    >
+      {overlay.present 
+        ? `Toolbar at ${overlay.position} (${overlay.height}px)` 
+        : 'No toolbar detected'}
+    </button>
+  );
+}
+```
+

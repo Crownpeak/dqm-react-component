@@ -1,6 +1,6 @@
 {
   "name": "@crownpeak/dqm-react-component",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "private": false,
   "description": "A React component for Crownpeak Digital Quality Management (DQM) integration",
   "type": "module",
@@ -14,10 +14,17 @@
       "require": "./dist/index.cjs",
       "default": "./dist/index.js"
     },
+    "./widget": {
+      "types": "./dist/dqm-widget.d.ts",
+      "import": "./dist/dqm-widget.esm.js",
+      "default": "./dist/dqm-widget.esm.js"
+    },
     "./dist/*": "./dist/*",
     "./package.json": "./package.json"
   },
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/dqm-widget.iife.js"
+  ],
   "files": [
     "dist",
     "README.md",
@@ -55,12 +62,14 @@
     "dev:client": "vite",
     "dev:server": "REDIS_URL=redis://localhost:6379 tsx watch server/index.ts",
     "dev:auth-ui": "cd server-ui && vite",
-    "build": "npm run build:lib && npm run build:server && npm run build:auth-ui",
+    "build": "npm run build:lib && npm run build:widget && npm run build:server && npm run build:auth-ui",
     "build:lib": "tsc && vite build --mode library",
+    "build:widget": "vite build --mode widget && cp src/html-pages/dqm-widget.d.ts dist/",
     "build:server": "tsc -p tsconfig.server.json",
     "build:auth-ui": "cd server-ui && vite build",
     "start": "npm run build && concurrently \"npm run start:server\" \"vite\"",
     "start:server": "REDIS_URL=redis://localhost:6379 node dist/server/index.js",
+    "serve:widget": "npx serve -l 4173 -c serve.json",
     "prepublishOnly": "npm run build && npm run lint",
     "lint": "eslint . || true",
     "preview": "vite preview --host"

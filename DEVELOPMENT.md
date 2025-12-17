@@ -39,6 +39,7 @@ crownpeak-dqm-react-component/
 │   ├── index.ts                # Library entry point
 │   ├── App.tsx                 # Dev test harness
 │   └── main.tsx                # Dev app entry
+│   ├── html-pages/              # Widget entrypoint, loaders, declarations
 │
 ├── server/                      # Backend API
 │   ├── routes/                 # API endpoints
@@ -55,9 +56,14 @@ crownpeak-dqm-react-component/
 ├── dist/                       # Build output
 │   ├── index.js               # Library ESM
 │   ├── index.cjs              # Library CommonJS
-│   ├── index.d.ts             # Type declarations
+│   ├── index.d.ts             # Library type declarations
+│   ├── dqm-widget.esm.js      # Widget bundle (ESM)
+│   ├── dqm-widget.iife.js     # Widget bundle (IIFE)
+│   └── dqm-widget.d.ts        # Widget type declarations
 │   └── server/                # Compiled server code
 │
+├── test/                       # Demo pages for widget bundles
+├── public/                     # Landing page for demos
 ├── vite.config.ts             # Vite configuration
 ├── tsconfig.json              # TypeScript base config
 ├── tsconfig.lib.json          # Library build config
@@ -134,6 +140,14 @@ npm run build:lib
 
 Output: `dist/index.{js,cjs,d.ts}`
 
+### Build Widget Bundle
+
+```bash
+npm run build:widget
+```
+
+Output: `dist/dqm-widget.{esm.js,iife.js,d.ts}` (fully bundled, Shadow DOM-safe)
+
 ### Build Server
 
 ```bash
@@ -142,12 +156,33 @@ npm run build:server
 
 Output: `dist/server/`
 
+### Build Everything
+
+```bash
+npm run build
+```
+
+Runs library + widget + backend + auth UI builds.
+
 ### Test Library Build
 
 ```bash
 npm pack
 # Creates: crownpeak-dqm-react-component-1.0.0.tgz
 ```
+
+### Preview Widget Bundle Locally
+
+```bash
+npm run build:widget
+npm run serve:widget
+```
+
+Serves `dist/` plus demo pages via `serve.json` rewrites:
+- `/test/demo-iife.html` for IIFE bundle
+- `/test/demo-esm.html` for ESM bundle
+- `/test/demo-dynamic.html` for lazy loading
+- `/test/widget-standalone.html` for full standalone demo
 
 ## Environment Configuration
 

@@ -70,6 +70,8 @@ export default App;
 - **[Authentication Guide](./AUTHENTICATION.md)** - OAuth 2.0 setup and configuration
 - **[Backend API](./BACKEND-API.md)** - API endpoints and usage
 - **[Development Guide](./DEVELOPMENT.md)** - Contributing and local development
+- **Standalone Widget** - Use the fully bundled widget via `/dist/dqm-widget.{esm.js,iife.js}` (see Quick Start and test
+  demos under `test/`)
 
 ## 🔑 Authentication Setup
 
@@ -143,6 +145,71 @@ See [REDIS-SETUP.md](./REDIS-SETUP.md) for Redis installation.
 | `onClose`   | `() => void` | ✅        | Callback when sidebar closes |
 | `onOpen`    | `() => void` | ✅        | Callback when sidebar opens  |
 | `debugHtml` | `string`     | ❌        | HTML for testing (dev only)  |
+| `config`    | `DQMConfig`  | ❌        | Configuration options        |
+
+### DQMConfig Options
+
+| Option            | Type            | Default | Description                                    |
+|-------------------|-----------------|---------|------------------------------------------------|
+| `apiKey`          | `string`        | -       | Direct API key (not for production)            |
+| `websiteId`       | `string`        | -       | Website ID for DQM                             |
+| `authBackendUrl`  | `string`        | -       | Backend URL for session management             |
+| `useLocalStorage` | `boolean`       | `true`  | Persist credentials in localStorage            |
+| `disabled`        | `boolean`       | `false` | Disable DQM completely                         |
+| `disableLogout`   | `boolean`       | `false` | Hide the logout control (host manages session) |
+| `shadowDomMode`   | `boolean`       | `false` | Enable for Shadow DOM embedding                |
+| `overlayConfig`   | `OverlayConfig` | -       | Overlay/toolbar detection config               |
+
+### OverlayConfig (for Toolbars & Overlays)
+
+Configure how the sidebar adapts to fixed overlays (e.g., admin toolbars):
+
+```tsx
+<DQMSidebar
+    config={{
+        overlayConfig: {
+            // CSS selector for the overlay element
+            selector: 'iframe#MyToolbar',
+
+            // Validate iFrame has contentWindow (default: true)
+            validateIframe: true,
+
+            // Polling interval in ms for cross-origin iFrames (default: 1000)
+            pollMs: 1000,
+
+            // OR: Manual offset when auto-detection doesn't work
+            // (e.g., for iFrames that fill screen but have smaller internal content)
+            manualOffset: {
+                position: 'top', // 'top' | 'bottom' | 'left' | 'right'
+                pixels: 50
+            }
+        }
+    }}
+/>
+```
+
+**Common overlay configurations:**
+
+[//]: # (@formatter:off)
+```tsx
+// Disable overlay detection
+overlayConfig: {
+    selector: null
+}
+
+// Manual 50px offset from top
+overlayConfig: {
+    manualOffset: {
+        position: 'top', pixels: 50
+    }
+}
+
+// Custom selector without iFrame validation
+overlayConfig: {
+    selector: '.admin-toolbar', validateIframe: false
+}
+```
+[//]: # (@formatter:on)
 
 ### Exported Types
 
@@ -151,8 +218,15 @@ import type {
     AnalysisState,
     Checkpoint,
     AnalysisData,
-    DQMSidebarProps
+    DQMSidebarProps,
+    DQMConfig,
+    OverlayConfig,
+    OverlayOffsetPosition
 } from '@crownpeak/dqm-react-component';
+
+// For advanced overlay handling
+import {useOverlayResistant} from '@crownpeak/dqm-react-component';
+import type {OverlayInfo, OverlayPosition} from '@crownpeak/dqm-react-component';
 ```
 
 See [TypeScript examples](./EXAMPLES.md#typescript-configuration) for full type definitions.

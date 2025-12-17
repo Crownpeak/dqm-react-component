@@ -2,12 +2,11 @@ import {styled} from "@mui/material/styles";
 import {Box} from "@mui/material";
 
 export const SidebarHeader = styled(Box)(({theme}) => ({
-    background: '#1f2937',
-    color: 'white',
-    padding: theme.spacing(3),
+    padding: theme.spacing(2),
     display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    borderBottom: `1px solid ${theme.palette.divider}`,
+    alignItems: 'center',
+    justifyContent: 'center',
     minHeight: 40,
+    color: theme.palette.common.black,
+    borderBottom: `1px solid ${theme.palette.divider}`,
 }));
