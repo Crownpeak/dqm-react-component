@@ -37,6 +37,9 @@ jobs:
     
     - name: Build auth-ui
       run: npm run build:auth-ui
+
+    - name: Build widget
+      run: npm run build:widget
     
     - name: Check bundle size
       run: npm pack --dry-run

@@ -100,12 +100,15 @@ Users can install with: `npm install @crownpeak/dqm-react-component@beta`
 
 The published package includes:
 
-- `dist/` - Compiled library code (ESM + CommonJS)
-  - `dist/index.js` - ESM build
-  - `dist/index.cjs` - CommonJS build
-  - `dist/index.d.ts` - TypeScript definitions
-  - `dist/server/` - Backend server code
-  - `dist/auth-ui/` - Authentication UI bundle
+- `dist/` - Compiled outputs
+   - `dist/index.js` - Library ESM build
+   - `dist/index.cjs` - Library CommonJS build
+   - `dist/index.d.ts` - Library type definitions
+   - `dist/dqm-widget.esm.js` - Standalone widget (ESM)
+   - `dist/dqm-widget.iife.js` - Standalone widget (IIFE)
+   - `dist/dqm-widget.d.ts` - Widget type definitions
+   - `dist/server/` - Backend server code
+   - `dist/auth-ui/` - Authentication UI bundle
 - `README.md` - Main documentation
 - `LICENSE` - MIT License
 - `CHANGELOG.md` - Version history
@@ -175,8 +178,9 @@ Current package size: ~4.3 MB unpacked, ~1.2 MB packed
 
 ## NPM Scripts Reference
 
-- `npm run build` - Build library, server, and auth-ui
+- `npm run build` - Build library, widget, server, and auth-ui
 - `npm run build:lib` - Build library only
+- `npm run build:widget` - Build standalone widget bundles + copy types
 - `npm run build:server` - Build server only
 - `npm run build:auth-ui` - Build auth-ui only
 - `npm run lint` - Run ESLint

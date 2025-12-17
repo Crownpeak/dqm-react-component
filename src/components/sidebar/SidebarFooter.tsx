@@ -12,7 +12,6 @@ export const SidebarFooter = ({children}: {
             background: 'white',
             display: 'flex',
             justifyContent: 'center',
-            bottom: 0,
             zIndex: 10,
         }}
     >

@@ -12,6 +12,13 @@ npm install
 npm run build
 ```
 
+### Build widget only (for standalone script usage)
+
+```bash
+npm run build:widget
+npm run serve:widget   # preview demos at http://localhost:4173/test/demo-iife.html etc.
+```
+
 ## Start Development
 
 ```bash

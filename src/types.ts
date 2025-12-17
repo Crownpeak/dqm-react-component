@@ -19,6 +19,76 @@ export interface OAuth2Config {
   scope?: string;
 }
 
+/**
+ * Position for manual overlay offset configuration.
+ * Specifies from which edge the offset should be applied.
+ */
+export type OverlayOffsetPosition = 'top' | 'bottom' | 'left' | 'right';
+
+/**
+ * Configuration for overlay/toolbar detection and offset handling.
+ * 
+ * Use this to configure how the DQM sidebar adapts to overlays like
+ * toolbars or other fixed elements on the page.
+ * 
+ * @example
+ * // Manual offset for a 50px toolbar at the top
+ * overlayConfig: {
+ *   manualOffset: {
+ *     position: 'top',
+ *     pixels: 50
+ *   }
+ * }
+ * 
+ * @example
+ * // Custom selector with iFrame content validation
+ * overlayConfig: {
+ *   selector: 'iframe.my-toolbar',
+ *   validateIframe: true
+ * }
+ */
+export interface OverlayConfig {
+  /**
+   * CSS selector for the overlay element to detect.
+   *
+   * Set to `null` or empty string to disable auto-detection.
+   */
+  selector?: string | null;
+  
+  /**
+   * Whether to validate iFrame elements by checking if contentWindow exists.
+   * Only applies when the detected element is an iFrame.
+   * Default: true
+   */
+  validateIframe?: boolean;
+  
+  /**
+   * Polling interval in milliseconds for detecting overlay changes.
+   * Useful for cross-origin iFrames where MutationObserver can't detect internal changes.
+   * Set to 0 to disable polling.
+   * Default: 1000
+   */
+  pollMs?: number;
+  
+  /**
+   * Manual offset configuration. Use this when auto-detection doesn't work,
+   * e.g., for iFrames that fill the whole screen but have smaller internal content.
+   * 
+   * When set, this takes precedence over auto-detected values.
+   */
+  manualOffset?: {
+    /**
+     * The edge from which to apply the offset.
+     */
+    position: OverlayOffsetPosition;
+    
+    /**
+     * The offset value in pixels.
+     */
+    pixels: number;
+  };
+}
+
 // DQM Configuration
 export interface DQMConfig {
   // Direct authentication (highest priority)
@@ -34,9 +104,34 @@ export interface DQMConfig {
   
   // Disable DQM completely (shows "Permission Denied")
   disabled?: boolean; // Default: false
+
+  // Hide the logout control (use when the host app manages session lifecycle)
+  disableLogout?: boolean; // Default: false
   
   // Custom API endpoint (optional, defaults to Crownpeak)
   apiEndpoint?: string;
+  
+  // Shadow DOM mode - disables portals so styles work inside Shadow DOM
+  // Set to true when embedding widget in Shadow DOM (e.g., standalone widget)
+  shadowDomMode?: boolean; // Default: false
+  
+  /**
+   * Configuration for overlay detection and offset handling.
+   * 
+   * Use this to adapt the sidebar position to fixed overlays like
+   * preview bars, admin toolbars, or other fixed-position elements.
+   * 
+   * @example
+   * // Disable overlay detection
+   * overlayConfig: { selector: null }
+   * 
+   * @example
+   * // Manual 50px offset from top
+   * overlayConfig: { manualOffset: { position: 'top', pixels: 50 } }
+   * 
+   * @see OverlayConfig for all available options
+   */
+  overlayConfig?: OverlayConfig;
 }
 
 // DQM Modal Props Interface

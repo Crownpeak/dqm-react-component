@@ -4,7 +4,10 @@ import {Box} from "@mui/material";
 export const SidebarContent = styled(Box)(({theme}) => ({
     flex: 1,
     overflow: 'auto',
-    padding: theme.spacing(2),
+    paddingTop: theme.spacing(2),
+    paddingLeft: theme.spacing(2),
+    paddingRight: theme.spacing(2),
+    paddingBottom: 0,
     borderLeft: `1px solid ${theme.palette.divider}`,
     '&::-webkit-scrollbar': {
         width: 8,

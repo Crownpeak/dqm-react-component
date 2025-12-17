@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crownpeak DQM React Component - Development</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-dark.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e4e4e7;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #a1a1aa;
+            font-size: 1.1rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        
+        .card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(96, 165, 250, 0.5);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+        }
+        
+        .card h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #f4f4f5;
+        }
+        
+        .card p {
+            color: #a1a1aa;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .card .tag {
+            display: inline-block;
+            background: rgba(96, 165, 250, 0.2);
+            color: #60a5fa;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-top: 12px;
+        }
+        
+        .card .tag.warning {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+        
+        .card .tag.success {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+        
+        section {
+            margin-bottom: 48px;
+        }
+        
+        section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #a1a1aa;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .file-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .file-link {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 16px;
+            color: #60a5fa;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            transition: all 0.2s ease;
+        }
+        
+        .file-link:hover {
+            background: rgba(96, 165, 250, 0.15);
+            border-color: rgba(96, 165, 250, 0.5);
+        }
+        
+        .impl-card {
+            cursor: default;
+        }
+        
+        .impl-card:hover {
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .code-block {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            overflow-x: auto;
+            margin: 12px 0 8px 0;
+            white-space: pre;
+            color: #e4e4e7;
+        }
+        
+        footer {
+            text-align: center;
+            color: #71717a;
+            font-size: 0.85rem;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        footer a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: #0d1117;
+            margin: 5% auto;
+            padding: 40px;
+            border: 1px solid #30363d;
+            width: 90%;
+            max-width: 1000px;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .close-modal {
+            color: #aaa;
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+            transition: color 0.2s;
+        }
+
+        .close-modal:hover,
+        .close-modal:focus {
+            color: #fff;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .markdown-body {
+            box-sizing: border-box;
+            min-width: 200px;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 15px;
+            background-color: transparent;
+        }
+
+        /* Code View Styles */
+        .hljs-ln td {
+            padding-left: 10px;
+            line-height: 1.5;
+        }
+        .hljs-ln-numbers {
+            text-align: right;
+            border-right: 1px solid #30363d;
+            padding-right: 10px !important;
+            color: #6e7681;
+            min-width: 40px;
+            user-select: none;
+        }
+        .hljs-ln-code {
+            padding-left: 15px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Crownpeak DQM</h1>
+            <p class="subtitle">React Component for Digital Quality Management</p>
+        </header>
+
+        <section>
+            <h3>Integration Demos</h3>
+            <div class="grid">
+                <a href="/test/demo-iife.html" class="card">
+                    <div class="card-icon">📜</div>
+                    <h2>IIFE Script-Tag</h2>
+                    <p>Fastest way for any site. Loads everything in one file and auto-initializes.</p>
+                    <span class="tag success">Recommended</span>
+                </a>
+                
+                <a href="/test/demo-esm.html" class="card">
+                    <div class="card-icon">📦</div>
+                    <h2>ES Module Import</h2>
+                    <p>For modern browsers or build systems. Manual initialization supported.</p>
+                    <span class="tag">Modern</span>
+                </a>
+                
+                <a href="http://localhost:5173" class="card">
+                    <div class="card-icon">⚛️</div>
+                    <h2>React Component</h2>
+                    <p>For React projects. Full control over state and props.</p>
+                    <span class="tag warning">Port 5173</span>
+                </a>
+                
+                <a href="/test/demo-dynamic.html" class="card">
+                    <div class="card-icon">🔄</div>
+                    <h2>Dynamic Loading</h2>
+                    <p>Load the widget on demand from a URL. Ideal for lazy loading.</p>
+                    <span class="tag">Lazy Load</span>
+                </a>
+            </div>
+        </section>
+
+        <section>
+            <h3>Demo & Test Pages</h3>
+            <div class="grid">
+                <a href="http://localhost:5173" class="card">
+                    <div class="card-icon">⚛️</div>
+                    <h2>React Dev App</h2>
+                    <p>Full development harness with login, HTML editor, and live analysis.</p>
+                    <span class="tag warning">Port 5173</span>
+                </a>
+                
+                <a href="http://localhost:3001/auth" class="card">
+                    <div class="card-icon">🔐</div>
+                    <h2>OAuth2 Login UI</h2>
+                    <p>Backend authentication UI for OAuth2-based integration.</p>
+                    <span class="tag">Auth UI</span>
+                </a>
+            </div>
+        </section>
+
+        <section>
+            <h3>Widget Bundles (dist/)</h3>
+            <div class="file-list">
+                <a href="/dist/dqm-widget.iife.js" class="file-link">dqm-widget.iife.js</a>
+                <a href="/dist/dqm-widget.esm.js" class="file-link">dqm-widget.esm.js</a>
+            </div>
+        </section>
+
+        <section>
+            <h3>Library Bundles (dist/)</h3>
+            <div class="file-list">
+                <a href="/dist/index.js" class="file-link">index.js (ESM)</a>
+                <a href="/dist/index.cjs" class="file-link">index.cjs (CJS)</a>
+            </div>
+        </section>
+
+        <section>
+            <h3>Documentation</h3>
+            <div class="grid">
+                <a href="/README.md" class="card">
+                    <div class="card-icon">📖</div>
+                    <h2>README</h2>
+                    <p>Overview and quick-start guide for the project.</p>
+                </a>
+                
+                <a href="/QUICKSTART.md" class="card">
+                    <div class="card-icon">🚀</div>
+                    <h2>Quickstart</h2>
+                    <p>Step-by-step instructions for fast integration.</p>
+                </a>
+                
+                <a href="/EXAMPLES.md" class="card">
+                    <div class="card-icon">💡</div>
+                    <h2>Examples</h2>
+                    <p>Code samples for common integration scenarios.</p>
+                </a>
+                
+                <a href="/AUTHENTICATION.md" class="card">
+                    <div class="card-icon">🔑</div>
+                    <h2>Authentication</h2>
+                    <p>Authentication options: API key, OAuth2, backend.</p>
+                </a>
+            </div>
+        </section>
+
+        <footer>
+            <p>
+                <a href="https://github.com/Crownpeak/dqm-react-component" target="_blank">GitHub Repository</a>
+                &nbsp;•&nbsp;
+                <a href="https://www.npmjs.com/package/@crownpeak/dqm-react-component" target="_blank">npm Package</a>
+                &nbsp;•&nbsp;
+                © 2025 Crownpeak Technology GmbH
+            </p>
+        </footer>
+    </div>
+
+    <!-- Modal Structure -->
+    <div id="md-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div id="md-content" class="markdown-body"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('md-modal');
+            const content = document.getElementById('md-content');
+            const close = document.querySelector('.close-modal');
+
+            function closeModal() {
+                modal.style.display = "none";
+                document.body.style.overflow = 'auto';
+            }
+
+            function openModal() {
+                modal.style.display = "block";
+                document.body.style.overflow = 'hidden';
+            }
+
+            close.onclick = closeModal;
+
+            window.onclick = (event) => {
+                if (event.target == modal) {
+                    closeModal();
+                }
+            }
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.style.display === 'block') {
+                    closeModal();
+                }
+            });
+
+            function escapeHtml(text) {
+                return text
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            // Handle Markdown files
+            document.querySelectorAll('a[href$=".md"]').forEach(link => {
+                link.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    const url = link.getAttribute('href');
+
+                    content.innerHTML = '<div style="text-align:center; padding: 40px; color: #8b949e;">Loading markdown...</div>';
+                    openModal();
+
+                    try {
+                        const response = await fetch(url);
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        const text = await response.text();
+                        content.innerHTML = marked.parse(text);
+                        // Highlight code blocks in markdown
+                        content.querySelectorAll('pre code').forEach((block) => {
+                            hljs.highlightElement(block);
+                        });
+                    } catch (err) {
+                        console.error('Failed to load markdown', err);
+                        content.innerHTML = `<div style="color: #ff6b6b; text-align: center; padding: 20px;">
+                            <h3>Error loading document</h3>
+                            <p>${err.message}</p>
+                        </div>`;
+                    }
+                });
+            });
+
+            // Handle JS/Code files
+            const codeExtensions = ['.js', '.cjs', '.mjs', '.ts', '.tsx', '.json', '.css'];
+            document.querySelectorAll('a').forEach(link => {
+                const href = link.getAttribute('href');
+                if (!href) return;
+
+                const ext = href.substring(href.lastIndexOf('.'));
+                if (codeExtensions.includes(ext)) {
+                    link.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        const url = link.getAttribute('href');
+
+                        content.innerHTML = '<div style="text-align:center; padding: 40px; color: #8b949e;">Loading code...</div>';
+                        openModal();
+
+                        try {
+                            const response = await fetch(url);
+                            if (!response.ok) throw new Error('Network response was not ok');
+                            const text = await response.text();
+
+                            let lang = 'plaintext';
+                            if (['.js', '.cjs', '.mjs'].includes(ext)) lang = 'javascript';
+                            if (['.ts', '.tsx'].includes(ext)) lang = 'typescript';
+                            if (ext === '.json') lang = 'json';
+                            if (ext === '.css') lang = 'css';
+
+                            content.innerHTML = `<pre><code class="language-${lang}" style="background:transparent;">${escapeHtml(text)}</code></pre>`;
+
+                            const block = content.querySelector('pre code');
+                            hljs.highlightElement(block);
+
+                        } catch (err) {
+                            console.error('Failed to load code', err);
+                            content.innerHTML = `<div style="color: #ff6b6b; text-align: center; padding: 20px;">
+                                <h3>Error loading file</h3>
+                                <p>${err.message}</p>
+                            </div>`;
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
