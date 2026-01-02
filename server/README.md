@@ -20,7 +20,7 @@ cp .env.example .env
 
 ```env
 PORT=3001
-CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+CORS_ORIGINS=http://localhost:3000
 DQM_API_BASE_URL=https://api.crownpeak.net/dqm-cms/v1
 JWT_SECRET=your-secret-key-change-in-production
 ```
@@ -224,7 +224,7 @@ npm run start:server
 | Variable           | Default                                | Description                       |
 |--------------------|----------------------------------------|-----------------------------------|
 | `PORT`             | `3001`                                 | Server port                       |
-| `CORS_ORIGINS`     | `http://localhost:5173,...`            | Allowed origins (comma-separated) |
+| `CORS_ORIGINS`     | `http://localhost:3000,...`            | Allowed origins (comma-separated) |
 | `DQM_API_BASE_URL` | `https://api.crownpeak.net/dqm-cms/v1` | Crownpeak DQM API base URL        |
 | `JWT_SECRET`       | `your-secret-key...`                   | Secret for JWT signing (if used)  |
 

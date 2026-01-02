@@ -49,7 +49,7 @@ export const LoginPage: React.FC = () => {
     if (autoRedirect.countdown === 0) {
       // Redirect now
       const urlParams = new URLSearchParams(window.location.search);
-      const returnUrl = urlParams.get('returnUrl') || 'http://localhost:5173';
+      const returnUrl = urlParams.get('returnUrl') || 'http://localhost:3000';
       const redirectUrl = new URL(returnUrl);
       redirectUrl.searchParams.set('sessionToken', autoRedirect.token);
       redirectUrl.searchParams.set('websiteId', autoRedirect.websiteId);
@@ -83,7 +83,7 @@ export const LoginPage: React.FC = () => {
     if (!autoRedirect) return;
     
     const urlParams = new URLSearchParams(window.location.search);
-    const returnUrl = urlParams.get('returnUrl') || 'http://localhost:5173';
+    const returnUrl = urlParams.get('returnUrl') || 'http://localhost:3000';
     const redirectUrl = new URL(returnUrl);
     redirectUrl.searchParams.set('sessionToken', autoRedirect.token);
     redirectUrl.searchParams.set('websiteId', autoRedirect.websiteId);
@@ -162,7 +162,7 @@ export const LoginPage: React.FC = () => {
       
       // Get return URL from query params or localStorage
       const urlParams = new URLSearchParams(window.location.search);
-      const returnUrl = urlParams.get('returnUrl') || localStorage.getItem('dqm_return_url') || 'http://localhost:5173';
+      const returnUrl = urlParams.get('returnUrl') || localStorage.getItem('dqm_return_url') || 'http://localhost:3000';
       
       console.log('[LoginPage] 🔄 Redirecting back to:', returnUrl);
       

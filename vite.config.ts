@@ -198,7 +198,7 @@ export default defineConfig(({mode}) => {
             }
         },
         server: {
-            port: 5173,
+            port: 3000,
             cors: false,
             proxy: {
                 // Proxy API requests to backend server

@@ -140,7 +140,7 @@ import {DQMSidebar} from '@crownpeak/dqm-react-component';
         //     authUrl: 'https://dqm.crownpeak.com/oauth2/authorize',
         //     clientId: 'crownpeak-dqm-react-component',
         //     scope: 'dqm_api',
-        //     redirectUri: 'http://localhost:5173/',
+        //     redirectUri: 'http://localhost:3000/',
         //     tokenUrl: 'https://dqm.crownpeak.com/oauth2/token',
         // }
     }}
@@ -167,7 +167,7 @@ npm run dev
 
 This starts:
 
-- Frontend on `http://localhost:5173`
+- Frontend on `http://localhost:3000`
 - Backend on `http://localhost:3001`
 
 ### Backend Requirements (Optional)
