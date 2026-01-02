@@ -12,6 +12,8 @@ import {
 } from '@mui/material';
 import { Lock as LockIcon, Login as LoginIcon } from '@mui/icons-material';
 import type { DQMConfig, SessionType } from '../../types';
+import { useTranslation } from 'react-i18next';
+import { logger } from '../../utils/logger';
 
 // SSR-safe localStorage helpers
 const getLocalStorageItem = (key: string): string | null => {
@@ -42,6 +44,7 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
     onAuthError,
     initialError,
 }) => {
+    const { t } = useTranslation(['auth', 'common']);
     const [apiKey, setApiKey] = useState('');
     const [websiteId, setWebsiteId] = useState('');
     const [loading, setLoading] = useState(false);
@@ -53,7 +56,7 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
     const showBackendLogin = hasBackendAuth; // Show backend login button if backend configured
 
     // Debug: Log when component renders
-    console.log('[DQMLogin] Component rendered', { 
+    logger.debug('[DQMLogin] Component rendered', { 
         config, 
         initialError, 
         error,
@@ -71,7 +74,7 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
         const websiteId = urlParams.get('websiteId');
 
         if (sessionToken && websiteId) {
-            console.log('[DQMLogin] 🎉 Found session token in URL, processing redirect');
+            logger.debug('[DQMLogin] 🎉 Found session token in URL, processing redirect');
             
             // Store session token
             if (typeof window !== 'undefined' && config.useLocalStorage !== false) {
@@ -79,7 +82,7 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
                 setLocalStorageItem('dqm_websiteID', websiteId);
                 setLocalStorageItem('dqm_sessionType', 'backend');
                 removeLocalStorageItem('dqm_apiKey');
-                console.log('[DQMLogin] Backend session saved to localStorage');
+                logger.debug('[DQMLogin] Backend session saved to localStorage');
             }
 
             // Clean URL (remove query params)
@@ -99,7 +102,7 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
     // Handle direct credential input
     const handleDirectLogin = async () => {
         if (!apiKey || !websiteId) {
-            setError('Please enter both API Key and Website ID');
+            setError(t('auth:errors.missing_fields'));
             return;
         }
 
@@ -109,7 +112,7 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
         try {
             // Validate API key encoding
             if (!/^[\x00-\x7F]*$/.test(apiKey)) {
-                throw new Error('API key contains non-ASCII characters');
+                throw new Error(t('auth:errors.non_ascii_key'));
             }
 
             // MODE 1: Backend Authentication - Send credentials to backend, get session token
@@ -143,7 +146,7 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
                     // Remove any old direct credentials
                     removeLocalStorageItem('dqm_apiKey');
                     removeLocalStorageItem('dqm_websiteID');
-                    console.log('[DQMLogin] Backend session saved to localStorage');
+                    logger.debug('[DQMLogin] Backend session saved to localStorage');
                 }
 
                 // Return dummy credentials + session token
@@ -165,7 +168,7 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
                     setLocalStorageItem('dqm_sessionType', 'direct');
                     // Remove any old session token
                     removeLocalStorageItem('dqm_sessionToken');
-                    console.log('[DQMLogin] Direct credentials saved to localStorage');
+                    logger.debug('[DQMLogin] Direct credentials saved to localStorage');
                 }
 
                 onAuthSuccess({ 
@@ -186,7 +189,7 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
     // Handle OAuth2 login - Redirect to backend login page
     const handleOAuth2Login = () => {
         if (!config.authBackendUrl) {
-            setError('Backend URL not configured');
+            setError(t('auth:errors.backend_missing'));
             return;
         }
 
@@ -200,15 +203,22 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
                 setLocalStorageItem('dqm_return_url', returnUrl);
             }
 
-            console.log('[DQMLogin] 🔄 Redirecting to login page');
-            console.log('[DQMLogin] Return URL:', returnUrl);
+            logger.debug('[DQMLogin] 🔄 Redirecting to login page');
+            logger.debug('[DQMLogin] Return URL:', returnUrl);
 
             // Redirect to login page with return URL
             const loginUrl = new URL(`${config.authBackendUrl}/auth/login`);
             loginUrl.searchParams.set('returnUrl', returnUrl);
-            window.location.href = loginUrl.toString();
+
+            import("@webcontainer/env").then(({isWebContainer}) => {
+                if (isWebContainer) {
+                    window.open(loginUrl.toString(), '_blank');
+                } else {
+                    window.location.href = loginUrl.toString();
+                }
+            })
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to redirect to login page';
+            const errorMessage = err instanceof Error ? err.message : t('auth:errors.failed_redirect');
             setError(errorMessage);
             onAuthError(err instanceof Error ? err : new Error(errorMessage));
             setLoading(false);
@@ -229,10 +239,10 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
             <Box sx={{ textAlign: 'center' }}>
                 <LockIcon sx={{ fontSize: 50, color: '#711bc1', mb: 2 }} />
                 <Typography variant="h5" gutterBottom fontWeight={700}>
-                    DQM Authentication
+                    {t('auth:heading')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    Please authenticate to access quality analysis
+                    {t('auth:subheading')}
                 </Typography>
             </Box>
 
@@ -246,11 +256,11 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
             {showDirectCredentials && (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <Typography variant="subtitle2" color="text.secondary">
-                        Enter credentials directly
+                        {t('auth:enter_credentials')}
                     </Typography>
                     
                     <TextField
-                        label="Website ID"
+                        label={t('auth:website_id')}
                         // make it a username field for password managers to fill it in correctly
                         autoComplete="username"
                         value={websiteId}
@@ -258,18 +268,18 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
                         disabled={loading}
                         fullWidth
                         required
-                        helperText="Your website identifier"
+                        helperText={t('auth:website_id_helper')}
                     />
 
                     <TextField
-                        label="API Key"
+                        label={t('auth:api_key')}
                         type="password"
                         value={apiKey}
                         onChange={(e) => setApiKey(e.target.value)}
                         disabled={loading}
                         fullWidth
                         required
-                        helperText="Your Crownpeak DQM API key"
+                        helperText={t('auth:api_key_helper')}
                     />
                     
                     <Button
@@ -279,14 +289,14 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
                         fullWidth
                         size="large"
                     >
-                        {loading ? <CircularProgress size={24} /> : 'Continue'}
+                        {loading ? <CircularProgress size={24} /> : t('auth:continue')}
                     </Button>
                 </Box>
             )}
 
             {/* Divider - only show if we have both backend AND direct credentials */}
             {showBackendLogin && showDirectCredentials && (
-                <Divider>OR</Divider>
+                <Divider>{t('auth:or')}</Divider>
             )}
 
             {/* Backend Login Button - Opens login page in popup */}
@@ -305,15 +315,15 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
                         },
                     }}
                 >
-                    {loading ? <CircularProgress size={24} color="inherit" /> : 'Login with Backend Session'}
+                    {loading ? <CircularProgress size={24} color="inherit" /> : t('auth:login_backend')}
                 </Button>
             )}
 
             {/* Help Text */}
             <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
-                Don't have credentials?{' '}
+                {t('auth:no_credentials')}{' '}
                 <Link href="https://www.crownpeak.com/firstspirit/products/digital-accessibility/digital-accessibility-and-quality-management-dqm/" target="_blank">
-                    Get started with Crownpeak DQM
+                    {t('auth:get_started')}
                 </Link>
             </Typography>
         </Box>

@@ -2,6 +2,93 @@
 
 This document shows different ways to configure authentication for the DQM Sidebar component.
 
+## Authentication Flow Overview
+
+```mermaid
+flowchart TD
+    A[DQM Sidebar Opens] --> B{Props Auth?}
+    B -->|Yes| C[Use apiKey + websiteId from props]
+    B -->|No| D{localStorage Auth?}
+    
+    D -->|Yes| E[Use cached credentials]
+    D -->|No| F{Backend Auth?}
+    
+    F -->|Yes - Custom| G[Call authBackendUrl/auth/token]
+    F -->|Yes - OAuth2| H[Start OAuth2 Flow]
+    F -->|No| I[Show Login Form]
+    
+    C --> J[Authenticated]
+    E --> J
+    G --> K{Success?}
+    H --> L[OAuth2 Callback]
+    L --> K
+    K -->|Yes| J
+    K -->|No| I
+    I --> M[User Enters Credentials]
+    M --> N[Store in localStorage]
+    N --> J
+    
+    J --> O[Fetch HTML from DOM]
+    O --> P[Send to DQM API]
+    P --> Q[Display Analysis Results]
+```
+
+## OAuth2 Flow (Sequence Diagram)
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant DQMSidebar as DQM Sidebar
+    participant Browser
+    participant AuthServer as OAuth2 Auth Server
+    participant Backend as Your Backend
+    participant DQMApi as Crownpeak DQM API
+
+    User->>DQMSidebar: Open sidebar
+    DQMSidebar->>Browser: Check localStorage for credentials
+    Browser-->>DQMSidebar: No credentials found
+    
+    DQMSidebar->>AuthServer: Redirect to authUrl with clientId, redirectUri, scope
+    AuthServer->>User: Show login page
+    User->>AuthServer: Enter credentials
+    AuthServer-->>Browser: Redirect to redirectUri with authorization code
+    
+    Browser->>DQMSidebar: Callback with code
+    DQMSidebar->>Backend: POST /auth/oauth2/callback (code, redirectUri)
+    Backend->>AuthServer: POST /token (code, clientId, clientSecret)
+    AuthServer-->>Backend: Return access_token
+    Backend->>Backend: Fetch user's DQM credentials
+    Backend-->>DQMSidebar: Return apiKey + websiteId
+    
+    DQMSidebar->>Browser: Store credentials in localStorage
+    DQMSidebar->>DQMApi: Authenticate with apiKey + websiteId
+    DQMApi-->>DQMSidebar: Success
+    DQMSidebar->>User: Show analysis interface
+```
+
+## Session Type Flow
+
+```mermaid
+flowchart TD
+    A[Authentication Complete] --> B{Session Type?}
+    
+    B -->|Direct| C[sessionType: 'direct']
+    B -->|Backend Proxy| D[sessionType: 'backend']
+    
+    C --> E[API Calls go directly to DQM API]
+    E --> F[Headers: x-api-key, apiKey query param]
+    F --> G[POST api.crownpeak.net/dqm-cms/v1/assets]
+    
+    D --> H[API Calls go through Backend Proxy]
+    H --> I[Headers: Authorization Bearer sessionToken]
+    I --> J[POST yourbackend.com/api/dqm/assets]
+    J --> K[Backend forwards to DQM API]
+    
+    G --> L[DQM Analysis Result]
+    K --> L
+    L --> M[Display in Sidebar]
+```
+
 ## 1. Direct Credentials (Simplest)
 
 Pass API credentials directly as props:

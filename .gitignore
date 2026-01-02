@@ -49,6 +49,12 @@ Thumbs.db
 # Redis
 dump.rdb
 
+# Wiki build output (keep templates only)
+wiki/*
+!wiki/Home.md
+!wiki/_Sidebar.md
+!wiki/README.md
+
 # Temporary files
 *.tmp
 *.temp

@@ -9,6 +9,7 @@
 // Re-export main widget initialization function and types
 export { initDQMWidget, DQMWidget } from './DQMWidget';
 export type { DQMWidgetConfig } from './DQMWidget';
+import { logger } from '../utils/logger';
 
 /**
  * Load the DQM React widget dynamically from a URL.
@@ -28,13 +29,13 @@ export type { DQMWidgetConfig } from './DQMWidget';
  * ```
  */
 export function loadDQMWidget(widgetUrl: string, fallbackUrl?: string): void {
-  console.log('[DQM] Loading widget...');
+  logger.debug('Loading widget...');
 
   // Load fonts (idempotent)
   injectFonts();
 
   // Load our compiled widget from URL
-  console.log(`[DQM] Loading widget from: ${widgetUrl}`);
+  logger.debug(`Loading widget from: ${widgetUrl}`);
 
   const cachedUrl = sessionStorage.getItem('dqm_widget_url');
   const urlToLoad = cachedUrl || widgetUrl;
@@ -44,18 +45,18 @@ export function loadDQMWidget(widgetUrl: string, fallbackUrl?: string): void {
   }
 
   loadScript(urlToLoad, true, () => {
-    console.log('[DQM] Widget loaded successfully');
+    logger.debug('Widget loaded successfully');
   }, () => {
     if (fallbackUrl) {
-      console.warn('[DQM] Primary URL failed, trying fallback...');
+      logger.warn('Primary URL failed, trying fallback...');
       loadScript(fallbackUrl, true, () => {
-        console.log('[DQM] Widget loaded from fallback successfully');
+        logger.debug('Widget loaded from fallback successfully');
         sessionStorage.setItem('dqm_widget_url', fallbackUrl);
       }, () => {
-        console.error('[DQM] Failed to load widget from both URLs');
+        logger.error('Failed to load widget from both URLs');
       });
     } else {
-      console.error('[DQM] Failed to load widget');
+      logger.error('Failed to load widget');
     }
   });
 }
@@ -66,7 +67,7 @@ export function loadDQMWidget(widgetUrl: string, fallbackUrl?: string): void {
 export function loadMUIWidget(widgetUrl: string, fallbackUrl: string): void {
   // Fallback modal functions for legacy compatibility
   (window as any).openDQMSidebar = (window as any).openDQMSidebar || function () {
-    console.log('[DQM] Modal function not yet loaded, retrying...');
+    logger.debug('Modal function not yet loaded, retrying...');
     setTimeout(() => {
       if ((window as any).openDQMSidebar) {
         (window as any).openDQMSidebar();
@@ -75,7 +76,7 @@ export function loadMUIWidget(widgetUrl: string, fallbackUrl: string): void {
   };
 
   (window as any).closeDQMSidebar = (window as any).closeDQMSidebar || function () {
-    console.log('[DQM] Close modal function not yet loaded');
+    logger.debug('Close modal function not yet loaded');
   };
 
   loadDQMWidget(widgetUrl, fallbackUrl);
@@ -123,7 +124,7 @@ function loadScript(
   }
   script.onload = onSuccess;
   script.onerror = (error) => {
-    console.error('[DQM] Failed to load script:', src, error);
+    logger.error('Failed to load script:', src, error);
     onError?.(error);
   };
   document.head.appendChild(script);

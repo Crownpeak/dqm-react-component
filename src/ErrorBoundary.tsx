@@ -10,6 +10,7 @@ import {
   Stack,
 } from '@mui/material';
 import type { ErrorBoundaryProps } from './types';
+import { logger } from './utils/logger';
 
 /**
  * ErrorBoundary
@@ -66,7 +67,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   private logErrorToService(error: Error, info: React.ErrorInfo, errorId?: string) {
     // Implement real remote logging here (e.g. Sentry, Datadog, Logtail, etc.)
     // Keep PII considerations in mind.
-    console.error('[ErrorBoundary] Captured error', { errorId, error, info });
+    logger.error('[ErrorBoundary] Captured error', { errorId, error, info });
   }
 
   private handleReload = () => {

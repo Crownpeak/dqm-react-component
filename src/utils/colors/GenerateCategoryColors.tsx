@@ -1,6 +1,7 @@
 // Dynamic color generation using chroma-js for unlimited categories
 // Generates visually distinct colors that remain consistent across sessions
 import chroma from "chroma-js";
+import { logger } from '../logger';
 
 export const generateCategoryColors = (categories: string[]): Record<string, string> => {
     if (categories.length === 0) return {};
@@ -48,7 +49,7 @@ export const hexToRgb = (hex: string) => {
 export const getContrastTextColor = (bgColor: string) => {
     // This is not working, so I need a distinction between black and white. Go on:
     if (!bgColor.startsWith('#')) {
-        console.warn('getContrastTextColor: Invalid hex color', bgColor);
+        logger.warn('getContrastTextColor: Invalid hex color', bgColor);
         return '#000000';
     }
 
@@ -58,13 +59,13 @@ export const getContrastTextColor = (bgColor: string) => {
     }
 
     if (bgColor.length !== 7) {
-        console.warn('getContrastTextColor: Invalid hex color length', bgColor);
+        logger.warn('getContrastTextColor: Invalid hex color length', bgColor);
         return '#000000';
     }
 
     const rgb = hexToRgb(bgColor);
     if (!rgb) {
-        console.warn('getContrastTextColor: Could not convert hex to rgb', bgColor);
+        logger.warn('getContrastTextColor: Could not convert hex to rgb', bgColor);
         return '#000000';
     }
 

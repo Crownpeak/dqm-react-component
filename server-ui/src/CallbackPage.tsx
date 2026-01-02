@@ -16,11 +16,14 @@ import {
   CheckCircle as CheckCircleIcon,
   Error as ErrorIcon,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitch } from './components/LanguageSwitch';
 
 export const CallbackPage: React.FC = () => {
   const theme = useTheme();
+  const { t } = useTranslation(['server', 'common']);
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [message, setMessage] = useState('Processing authentication...');
+  const [message, setMessage] = useState(t('server:processing_auth'));
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -82,7 +85,7 @@ export const CallbackPage: React.FC = () => {
         }
 
         setStatus('success');
-        setMessage('Authentication successful! You can close this window.');
+        setMessage(t('server:auth_close'));
 
         // Auto-close after 2 seconds if in popup
         if (window.opener) {
@@ -110,6 +113,9 @@ export const CallbackPage: React.FC = () => {
         background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
       }}
     >
+      <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+        <LanguageSwitch />
+      </Box>
       <Container maxWidth="sm">
         <Card
           elevation={8}
@@ -125,10 +131,10 @@ export const CallbackPage: React.FC = () => {
                 <>
                   <CircularProgress size={64} thickness={4} />
                   <Typography variant="h5" fontWeight="600">
-                    Authenticating...
+                    {t('server:auth_loading')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Please wait while we complete your sign-in
+                    {t('server:auth_wait')}
                   </Typography>
                 </>
               )}
@@ -142,7 +148,7 @@ export const CallbackPage: React.FC = () => {
                     }}
                   />
                   <Typography variant="h5" fontWeight="600" color="success.main">
-                    Success!
+                    {t('server:auth_success')}
                   </Typography>
                   <Typography variant="body1" color="text.secondary">
                     {message}
@@ -159,13 +165,13 @@ export const CallbackPage: React.FC = () => {
                     }}
                   />
                   <Typography variant="h5" fontWeight="600" color="error.main">
-                    Authentication Failed
+                    {t('server:auth_failed')}
                   </Typography>
                   <Alert severity="error" sx={{ width: '100%' }}>
                     {message}
                   </Alert>
                   <Typography variant="body2" color="text.secondary">
-                    Please close this window and try again
+                    {t('server:auth_retry')}
                   </Typography>
                 </>
               )}

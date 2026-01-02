@@ -89,6 +89,32 @@ export interface OverlayConfig {
   };
 }
 
+// WebLLM Translation configuration
+export interface WebLLMTranslationConfig {
+  /**
+   * Enable auto-translation by default (user can still toggle at runtime).
+   * Default: false
+   */
+  enabledByDefault?: boolean;
+
+  /**
+   * Optional WebLLM model id. When omitted, a small instruct model is selected automatically.
+   */
+  modelId?: string;
+
+  /**
+   * Translation compute budget in milliseconds (does not include model download time).
+   * Default: 15000
+   */
+  computeBudgetMs?: number;
+
+  /**
+   * Persist model artifacts in IndexedDB (more durable than Cache API in many browsers).
+   * Default: true
+   */
+  useIndexedDBCache?: boolean;
+}
+
 // DQM Configuration
 export interface DQMConfig {
   // Direct authentication (highest priority)
@@ -132,6 +158,22 @@ export interface DQMConfig {
    * @see OverlayConfig for all available options
    */
   overlayConfig?: OverlayConfig;
+
+  /**
+   * Optional in-browser translation of DQM API results using WebLLM.
+   */
+  translation?: WebLLMTranslationConfig;
+
+  /**
+   * Optional AI summary configuration.
+   */
+  summary?: {
+    /**
+     * Timeout in milliseconds for summary generation.
+     * Default: 45000
+     */
+    timeoutMs?: number;
+  };
 }
 
 // DQM Modal Props Interface
@@ -193,3 +235,6 @@ export interface AnalysisData {
   totalErrors: number;
   checkpoints: Checkpoint[];
 }
+
+// Grouped categories with checkpoints (used for filtering and display)
+export type GroupedCategories = Record<string, Checkpoint[]>;

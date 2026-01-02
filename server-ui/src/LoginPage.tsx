@@ -24,9 +24,12 @@ import {
   Pause as PauseIcon,
   PlayArrow as PlayIcon,
 } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitch } from './components/LanguageSwitch';
 
 export const LoginPage: React.FC = () => {
   const theme = useTheme();
+  const { t } = useTranslation(['server', 'common']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState('');
@@ -172,7 +175,7 @@ export const LoginPage: React.FC = () => {
       window.location.href = redirectUrl.toString();
       
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || err.message || 'Login failed';
+      const errorMessage = err.response?.data?.message || err.message || t('server:auth_failed');
       setError(errorMessage);
       console.error('[LoginPage] ❌ Login error:', errorMessage);
     } finally {
@@ -192,10 +195,13 @@ export const LoginPage: React.FC = () => {
           background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
         }}
       >
+        <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
+          <LanguageSwitch />
+        </Box>
         <Stack alignItems="center" spacing={2}>
           <CircularProgress size={60} />
           <Typography variant="h6" color="text.secondary">
-            Checking existing session...
+            {t('server:checking_session')}
           </Typography>
         </Stack>
       </Box>
@@ -214,6 +220,9 @@ export const LoginPage: React.FC = () => {
           overflow: 'hidden',
         }}
       >
+        <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 2 }}>
+          <LanguageSwitch />
+        </Box>
         {/* Background Image */}
         <Box
           sx={{
@@ -305,10 +314,10 @@ export const LoginPage: React.FC = () => {
                     style={{ textAlign: 'center' }}
                   >
                     <Typography variant="h4" gutterBottom fontWeight={700} color="success.main">
-                      Already Logged In! ✓
+                      {t('server:already_logged_in')}
                     </Typography>
                     <Typography variant="body1" color="text.secondary">
-                      You're already authenticated with DQM
+                      {t('server:already_auth')}
                     </Typography>
                   </motion.div>
 
@@ -331,7 +340,7 @@ export const LoginPage: React.FC = () => {
                       <Stack spacing={1}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                           <Typography variant="body2" color="text.secondary">
-                            Website ID:
+                            {t('server:session_website_id')}
                           </Typography>
                           <Typography variant="body2" fontWeight={600}>
                             {autoRedirect.websiteId.substring(0, 20)}...
@@ -339,10 +348,10 @@ export const LoginPage: React.FC = () => {
                         </Box>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                           <Typography variant="body2" color="text.secondary">
-                            Session:
+                            {t('server:session_label')}
                           </Typography>
                           <Typography variant="body2" fontWeight={600} color="success.main">
-                            Active
+                            {t('server:session_active')}
                           </Typography>
                         </Box>
                       </Stack>
@@ -379,7 +388,7 @@ export const LoginPage: React.FC = () => {
                       </motion.div>
                     </AnimatePresence>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                      Redirecting in {autoRedirect.countdown} second{autoRedirect.countdown !== 1 ? 's' : ''}...
+                      {t('server:redirecting_in', { count: autoRedirect.countdown })}
                     </Typography>
                   </Box>
 
@@ -412,7 +421,7 @@ export const LoginPage: React.FC = () => {
                             transition: 'all 0.3s ease',
                           }}
                         >
-                          {autoRedirect.paused ? 'Resume Countdown' : 'Wait / Pause'}
+                            {autoRedirect.paused ? t('server:resume') : t('server:pause')}
                         </Button>
                         <Button
                           fullWidth
@@ -430,7 +439,7 @@ export const LoginPage: React.FC = () => {
                             transition: 'all 0.3s ease',
                           }}
                         >
-                          Skip & Continue
+                          {t('server:continue')}
                         </Button>
                       </Stack>
                       
@@ -439,10 +448,10 @@ export const LoginPage: React.FC = () => {
                         fullWidth
                         variant="outlined"
                         color="error"
-                        onClick={handleLogout}
                         startIcon={<CloudIcon />}
+                        onClick={handleLogout}
                       >
-                        Logout & Use Different Account
+                        {t('server:logout')}
                       </Button>
                     </Stack>
                   </motion.div>
@@ -465,6 +474,9 @@ export const LoginPage: React.FC = () => {
         overflow: 'hidden',
       }}
     >
+      <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 2 }}>
+        <LanguageSwitch />
+      </Box>
       {/* Background Image */}
       <Box
         sx={{
@@ -504,10 +516,10 @@ export const LoginPage: React.FC = () => {
           >
             <CloudIcon sx={{ fontSize: 64, mb: 2, opacity: 0.9 }} />
             <Typography variant="h4" fontWeight="bold" gutterBottom>
-              Crownpeak DQM
+              {t('server:brand_title')}
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              Digital Quality Management Platform
+              {t('server:brand_subtitle')}
             </Typography>
           </Box>
 
@@ -522,35 +534,35 @@ export const LoginPage: React.FC = () => {
               <Stack spacing={3}>
                 <Box textAlign="center">
                   <Typography variant="h6" gutterBottom>
-                    Sign in to DQM
+                    {t('server:login_heading')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Enter your Crownpeak DQM credentials to continue
+                    {t('server:login_subheading')}
                   </Typography>
                 </Box>
 
                 <TextField
                 // for Password Managers, set this field to "username"
                   autoComplete="username"
-                  label="Website ID"
+                  label={t('server:website_id')}
                   fullWidth
                   type="text"
                   required
                   value={websiteId}
                   onChange={(e) => setWebsiteId(e.target.value)}
                   disabled={loading}
-                  placeholder="Enter your website ID"
+                  placeholder={t('server:website_id')}
                 />
 
                 <TextField
-                  label="API Key"
+                  label={t('server:api_key')}
                   type="password"
                   fullWidth
                   required
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   disabled={loading}
-                  placeholder="Enter your DQM API key"
+                  placeholder={t('server:api_key')}
                   InputProps={{
                     startAdornment: <VpnKeyIcon sx={{ mr: 1, color: 'text.secondary' }} />,
                   }}
@@ -574,12 +586,12 @@ export const LoginPage: React.FC = () => {
                     },
                   }}
                 >
-                  {loading ? 'Signing in...' : 'Sign In'}
+                  {loading ? t('server:signin_loading') : t('server:sign_in')}
                 </Button>
 
                 <Box textAlign="center" mt={2}>
                   <Typography variant="caption" color="text.secondary">
-                    Your credentials will be stored securely for future sessions
+                    {t('server:credentials_note')}
                   </Typography>
                 </Box>
               </Stack>
@@ -597,7 +609,7 @@ export const LoginPage: React.FC = () => {
             }}
           >
             <Typography variant="caption" color="text.secondary">
-              © 2025 Crownpeak Technology GmbH · Powered by Crownpeak DQM
+              {t('server:footer')}
             </Typography>
           </Box>
         </Card>

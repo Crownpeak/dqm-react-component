@@ -13,7 +13,8 @@ export type {
   OAuth2Config,
   AuthMode,
   OverlayConfig,
-  OverlayOffsetPosition
+  OverlayOffsetPosition,
+  WebLLMTranslationConfig,
 } from './types';
 
 // Overlay hook exports (for advanced usage)
@@ -23,3 +24,30 @@ export type {
   OverlayPosition,
   UseOverlayResistantConfig 
 } from './utils/useDomPresence';
+
+// AI Context exports (for advanced usage and custom integrations)
+export {
+  AIProvider,
+  useAI,
+  useTranslationCache,
+  useAIEngine,
+  useAITranslation,
+  useAISummary,
+} from './context/ai';
+export type {
+  AIContextValue,
+  AIProviderProps,
+  AiBackend,
+  AiModelPreset,
+  TranslationMode,
+  TranslationState,
+  SummaryState,
+  UseTranslationCacheReturn,
+  UseAIEngineOptions,
+  UseAIEngineReturn,
+  UseAITranslationOptions,
+  UseAITranslationReturn,
+  UseAISummaryOptions,
+  UseAISummaryReturn,
+  SummaryStats,
+} from './context/ai';

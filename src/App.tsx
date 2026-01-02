@@ -26,24 +26,13 @@ import {
     ThemeProvider,
     Typography
 } from '@mui/material';
-import {
-    Assessment,
-    Close,
-    Code as CodeIcon,
-    Lock,
-    Security,
-    Speed,
-    Storage,
-    TrendingUp,
-    Visibility,
-    VisibilityOff,
-    Web,
-} from '@mui/icons-material';
+import {Assessment, Close, Code as CodeIcon, Lock, Security, Speed, Storage, TrendingUp, Visibility, VisibilityOff, Web,} from '@mui/icons-material';
 import CodeMirror from '@uiw/react-codemirror';
 import {html} from '@codemirror/lang-html';
 import {oneDark} from '@codemirror/theme-one-dark';
 import DQMSidebar from './DQMSidebar';
 import {formatBytes, getStorageSize, loadHtmlFromStorage, saveHtmlToStorage,} from './utils/storage';
+import {useTranslation} from 'react-i18next';
 
 // Create a clean, modern theme
 const theme = createTheme({
@@ -107,6 +96,7 @@ const HtmlEditorModal: React.FC<{
     onClose: () => void;
     onAnalyze: (html: string) => void;
 }> = ({open, onClose, onAnalyze}) => {
+    const {t} = useTranslation(['demo']);
     const [activeTab, setActiveTab] = useState<number>(0);
     const [htmlCode, setHtmlCode] = useState<string>('');
     const [storageSize, setStorageSize] = useState<number>(0);
@@ -181,7 +171,7 @@ const HtmlEditorModal: React.FC<{
                 <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
                     <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
                         <CodeIcon/>
-                        <Typography variant="h6">HTML Editor</Typography>
+                        <Typography variant="h6">{t('demo:editor_title')}</Typography>
                     </Box>
                     <IconButton onClick={onClose} edge="end">
                         <Close/>
@@ -193,11 +183,10 @@ const HtmlEditorModal: React.FC<{
                     <Box sx={{display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between'}}>
                         <Box>
                             <Typography variant="subtitle2" fontWeight={600} gutterBottom>
-                                Debug Mode Active
+                                {t('demo:debug_mode')}
                             </Typography>
                             <Typography variant="body2">
-                                The DQM Widget will analyze the custom HTML from the editor instead of the page content.
-                                Your HTML is automatically saved to IndexedDB.
+                                {t('demo:debug_desc')}
                             </Typography>
                         </Box>
                         <Chip
@@ -217,8 +206,8 @@ const HtmlEditorModal: React.FC<{
                         variant="fullWidth"
                         sx={{borderBottom: 1, borderColor: 'divider'}}
                     >
-                        <Tab icon={<CodeIcon/>} label="HTML Editor" iconPosition="start"/>
-                        <Tab label="Preview" iconPosition="start"/>
+                        <Tab icon={<CodeIcon/>} label={t('demo:tab_editor')} iconPosition="start"/>
+                        <Tab label={t('demo:tab_preview')} iconPosition="start"/>
                     </Tabs>
 
                     <TabPanel value={activeTab} index={0}>
@@ -227,7 +216,7 @@ const HtmlEditorModal: React.FC<{
                                 <Box
                                     sx={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: 400}}>
                                     <Typography variant="body2" color="text.secondary">
-                                        Loading HTML from IndexedDB...
+                                        {t('demo:loading_html')}
                                     </Typography>
                                 </Box>
                             ) : (
@@ -242,10 +231,10 @@ const HtmlEditorModal: React.FC<{
                                     />
                                     <Box sx={{mt: 2, display: 'flex', gap: 2, alignItems: 'center'}}>
                                         <Button variant="outlined" onClick={handleResetToDefault} size="small">
-                                            Reset to Default
+                                            {t('demo:reset_default')}
                                         </Button>
                                         <Button variant="contained" onClick={() => setActiveTab(1)} size="small">
-                                            Preview HTML
+                                            {t('demo:preview_html')}
                                         </Button>
                                         <Chip
                                             icon={<Storage/>}
@@ -254,7 +243,7 @@ const HtmlEditorModal: React.FC<{
                                             variant="outlined"
                                         />
                                         <Typography variant="caption" color="text.secondary" sx={{ml: 'auto'}}>
-                                            Auto-saved to IndexedDB
+                                            {t('demo:auto_saved')}
                                         </Typography>
                                     </Box>
                                 </>
@@ -290,10 +279,10 @@ const HtmlEditorModal: React.FC<{
             </DialogContent>
             <DialogActions sx={{p: 2}}>
                 <Button onClick={onClose} variant="outlined">
-                    Close
+                    {t('demo:close')}
                 </Button>
                 <Button onClick={handleAnalyze} variant="contained" startIcon={<Assessment/>}>
-                    Analyze Custom HTML
+                    {t('demo:analyze_custom_html')}
                 </Button>
             </DialogActions>
         </Dialog>
@@ -305,6 +294,7 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                                                                                         onOpenDQM,
                                                                                         onOpenEditor,
                                                                                     }) => {
+    const {t} = useTranslation(['demo']);
     return (
         <Box sx={{bgcolor: 'white', minHeight: '100vh'}}>
             {/* Hero Section */}
@@ -320,7 +310,7 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                 <Container maxWidth="lg">
                     <Box sx={{textAlign: 'center', color: 'white', position: 'relative', zIndex: 1}}>
                         <Typography variant="h1" sx={{fontSize: {xs: '2.5rem', md: '4rem'}, mb: 3}}>
-                            Transform Your Business with Cloud Solutions
+                            {t('demo:hero_title')}
                         </Typography>
                         {/* DQM Error: Low contrast text */}
                         <Typography
@@ -333,8 +323,7 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                                 fontSize: {xs: '1.1rem', md: '1.5rem'}
                             }}
                         >
-                            Scalable, secure, and lightning-fast infrastructure for modern enterprises. Join thousands
-                            of companies already in the cloud.
+                            {t('demo:hero_subtitle')}
                         </Typography>
                         {/* DQM Error: Empty href */}
                         <Button
@@ -353,7 +342,7 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                                 '&:hover': {bgcolor: 'grey.100', transform: 'translateY(-2px)'},
                             }}
                         >
-                            Get Started Free
+                            {t('demo:hero_cta')}
                         </Button>
                     </Box>
                 </Container>
@@ -363,7 +352,7 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
             <Box sx={{py: {xs: 8, md: 12}, bgcolor: '#f7fafc'}}>
                 <Container maxWidth="lg">
                     <Typography variant="h2" sx={{textAlign: 'center', mb: 8, fontSize: {xs: '2rem', md: '3rem'}}}>
-                        Why Choose Cloudify?
+                        {t('demo:features_title')}
                     </Typography>
                     <Box sx={{display: 'grid', gridTemplateColumns: {xs: '1fr', md: 'repeat(3, 1fr)'}, gap: 4}}>
                         <Card
@@ -381,11 +370,10 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                                 sx={{width: '100%', height: 200, objectFit: 'cover', borderRadius: 2, mb: 3}}
                             />
                             <Typography variant="h5" sx={{mb: 2}}>
-                                Lightning Fast Performance
+                                {t('demo:feature1_title')}
                             </Typography>
                             <Typography variant="body1" color="text.secondary">
-                                Experience blazing fast load times with our globally distributed CDN and optimized
-                                infrastructure.
+                                {t('demo:feature1_body')}
                             </Typography>
                         </Card>
                         <Card
@@ -404,12 +392,11 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                                 sx={{width: '100%', height: 200, objectFit: 'cover', borderRadius: 2, mb: 3}}
                             />
                             <Typography variant="h5" sx={{mb: 2}}>
-                                Enterprise Security
+                                {t('demo:feature2_title')}
                             </Typography>
                             {/* DQM Error: Extremely small font size */}
                             <Typography variant="body1" color="text.secondary" sx={{fontSize: '8px'}}>
-                                Bank-level encryption and compliance with SOC 2, GDPR, and HIPAA standards to keep your
-                                data safe.
+                                {t('demo:feature2_body')}
                             </Typography>
                         </Card>
                         <Card
@@ -427,11 +414,10 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                                 sx={{width: '100%', height: 200, objectFit: 'cover', borderRadius: 2, mb: 3}}
                             />
                             <Typography variant="h5" sx={{mb: 2}}>
-                                Infinite Scalability
+                                {t('demo:feature3_title')}
                             </Typography>
                             <Typography variant="body1" color="text.secondary">
-                                Scale from zero to millions of users seamlessly. Our auto-scaling handles traffic spikes
-                                automatically.
+                                {t('demo:feature3_body')}
                             </Typography>
                         </Card>
                     </Box>
@@ -450,7 +436,7 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                     {/* DQM Error: Skipped heading level (h2 -> h5) */}
                     <Typography variant="h5" component="h5"
                                 sx={{textAlign: 'center', mb: 8, fontSize: {xs: '2rem', md: '3rem'}}}>
-                        Trusted by Industry Leaders
+                        {t('demo:stats_title')}
                     </Typography>
                     <Box sx={{
                         display: 'grid',
@@ -461,25 +447,25 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                             <Typography variant="h2" sx={{fontSize: {xs: '3rem', md: '4rem'}, mb: 1}}>
                                 50K+
                             </Typography>
-                            <Typography variant="h6">Active Customers</Typography>
+                            <Typography variant="h6">{t('demo:stat_active_customers')}</Typography>
                         </Box>
                         <Box sx={{textAlign: 'center'}}>
                             <Typography variant="h2" sx={{fontSize: {xs: '3rem', md: '4rem'}, mb: 1}}>
                                 99.99%
                             </Typography>
-                            <Typography variant="h6">Uptime Guarantee</Typography>
+                            <Typography variant="h6">{t('demo:stat_uptime')}</Typography>
                         </Box>
                         <Box sx={{textAlign: 'center'}}>
                             <Typography variant="h2" sx={{fontSize: {xs: '3rem', md: '4rem'}, mb: 1}}>
                                 150+
                             </Typography>
-                            <Typography variant="h6">Countries Served</Typography>
+                            <Typography variant="h6">{t('demo:stat_countries')}</Typography>
                         </Box>
                         <Box sx={{textAlign: 'center'}}>
                             <Typography variant="h2" sx={{fontSize: {xs: '3rem', md: '4rem'}, mb: 1}}>
                                 24/7
                             </Typography>
-                            <Typography variant="h6">Expert Support</Typography>
+                            <Typography variant="h6">{t('demo:stat_support')}</Typography>
                         </Box>
                     </Box>
                 </Container>
@@ -489,7 +475,7 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
             <Box sx={{py: {xs: 8, md: 12}, bgcolor: 'white'}}>
                 <Container maxWidth="lg">
                     <Typography variant="h2" sx={{textAlign: 'center', mb: 8, fontSize: {xs: '2rem', md: '3rem'}}}>
-                        What Our Customers Say
+                        {t('demo:testimonials_title')}
                     </Typography>
                     <Box sx={{display: 'grid', gridTemplateColumns: {xs: '1fr', md: 'repeat(3, 1fr)'}, gap: 4}}>
                         <Paper sx={{p: 4, height: '100%', borderLeft: '4px solid', borderColor: 'primary.main'}}>
@@ -499,14 +485,13 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                                 sx={{width: 80, height: 80, mb: 3}}
                             />
                             <Typography variant="body1" sx={{fontStyle: 'italic', mb: 3, lineHeight: 1.8}}>
-                                "Cloudify transformed our infrastructure. We reduced costs by 40% while improving
-                                performance. The migration was seamless!"
+                                {t('demo:testimonial1_quote')}
                             </Typography>
                             <Typography variant="subtitle1" fontWeight={600}>
-                                Michael Chen
+                                {t('demo:testimonial1_name')}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                                CTO, TechStart Inc.
+                                {t('demo:testimonial1_title')}
                             </Typography>
                         </Paper>
                         <Paper sx={{p: 4, height: '100%', borderLeft: '4px solid', borderColor: 'primary.main'}}>
@@ -517,14 +502,13 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                                 sx={{width: 80, height: 80, mb: 3}}
                             />
                             <Typography variant="body1" sx={{fontStyle: 'italic', mb: 3, lineHeight: 1.8}}>
-                                "The scalability is incredible. We went from 10K to 1M users without any hiccups. Best
-                                decision we ever made."
+                                {t('demo:testimonial2_quote')}
                             </Typography>
                             <Typography variant="subtitle1" fontWeight={600}>
-                                Sarah Johnson
+                                {t('demo:testimonial2_name')}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                                CEO, GrowthApp
+                                {t('demo:testimonial2_title')}
                             </Typography>
                         </Paper>
                         <Paper sx={{p: 4, height: '100%', borderLeft: '4px solid', borderColor: 'primary.main'}}>
@@ -534,14 +518,13 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                                 sx={{width: 80, height: 80, mb: 3}}
                             />
                             <Typography variant="body1" sx={{fontStyle: 'italic', mb: 3, lineHeight: 1.8}}>
-                                "Outstanding support team and rock-solid infrastructure. We sleep better knowing our
-                                data is in safe hands."
+                                {t('demo:testimonial3_quote')}
                             </Typography>
                             <Typography variant="subtitle1" fontWeight={600}>
-                                David Martinez
+                                {t('demo:testimonial3_name')}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                                VP Engineering, SecureData
+                                {t('demo:testimonial3_title')}
                             </Typography>
                         </Paper>
                     </Box>
@@ -552,27 +535,27 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
             <Box sx={{py: {xs: 8, md: 12}, bgcolor: '#f7fafc'}}>
                 <Container maxWidth="lg">
                     <Typography variant="h2" sx={{textAlign: 'center', mb: 2, fontSize: {xs: '2rem', md: '3rem'}}}>
-                        Simple, Transparent Pricing
+                        {t('demo:pricing_title')}
                     </Typography>
                     <Typography variant="h6" sx={{textAlign: 'center', mb: 8, color: 'text.secondary'}}>
-                        Choose the plan that works best for your team
+                        {t('demo:pricing_subtitle')}
                     </Typography>
                     <Box sx={{display: 'grid', gridTemplateColumns: {xs: '1fr', md: 'repeat(3, 1fr)'}, gap: 4}}>
                         <Card sx={{p: 4, height: '100%', textAlign: 'center'}}>
                             <Typography variant="h5" sx={{mb: 2}}>
-                                Starter
+                                {t('demo:plan_starter')}
                             </Typography>
                             <Typography variant="h3" sx={{mb: 3}}>
                                 $29<Typography component="span" variant="h6" color="text.secondary">/mo</Typography>
                             </Typography>
                             <Box sx={{mb: 4, textAlign: 'left'}}>
-                                <Typography variant="body1" sx={{mb: 1}}>✓ 10 GB Storage</Typography>
-                                <Typography variant="body1" sx={{mb: 1}}>✓ 100 GB Bandwidth</Typography>
-                                <Typography variant="body1" sx={{mb: 1}}>✓ Email Support</Typography>
-                                <Typography variant="body1" sx={{mb: 1}}>✓ 99.9% Uptime</Typography>
+                                <Typography variant="body1" sx={{mb: 1}}>✓ {t('demo:plan_starter_feat1')}</Typography>
+                                <Typography variant="body1" sx={{mb: 1}}>✓ {t('demo:plan_starter_feat2')}</Typography>
+                                <Typography variant="body1" sx={{mb: 1}}>✓ {t('demo:plan_starter_feat3')}</Typography>
+                                <Typography variant="body1" sx={{mb: 1}}>✓ {t('demo:plan_starter_feat4')}</Typography>
                             </Box>
                             <Button variant="outlined" fullWidth size="large">
-                                Get Started
+                                {t('demo:plan_cta_outline')}
                             </Button>
                         </Card>
                         <Card
@@ -598,41 +581,41 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                                     borderRadius: 10,
                                 }}
                             >
-                                Popular
+                                {t('demo:plan_badge_popular')}
                             </Box>
                             <Typography variant="h5" sx={{mb: 2, mt: 2}}>
-                                Professional
+                                {t('demo:plan_pro')}
                             </Typography>
                             <Typography variant="h3" sx={{mb: 3}}>
                                 $99<Typography component="span" variant="h6" color="text.secondary">/mo</Typography>
                             </Typography>
                             <Box sx={{mb: 4, textAlign: 'left'}}>
-                                <Typography variant="body1" sx={{mb: 1}}>✓ 100 GB Storage</Typography>
-                                <Typography variant="body1" sx={{mb: 1}}>✓ 1 TB Bandwidth</Typography>
-                                <Typography variant="body1" sx={{mb: 1}}>✓ Priority Support</Typography>
-                                <Typography variant="body1" sx={{mb: 1}}>✓ 99.99% Uptime</Typography>
-                                <Typography variant="body1" sx={{mb: 1}}>✓ Advanced Analytics</Typography>
+                                <Typography variant="body1" sx={{mb: 1}}>✓ {t('demo:plan_pro_feat1')}</Typography>
+                                <Typography variant="body1" sx={{mb: 1}}>✓ {t('demo:plan_pro_feat2')}</Typography>
+                                <Typography variant="body1" sx={{mb: 1}}>✓ {t('demo:plan_pro_feat3')}</Typography>
+                                <Typography variant="body1" sx={{mb: 1}}>✓ {t('demo:plan_pro_feat4')}</Typography>
+                                <Typography variant="body1" sx={{mb: 1}}>✓ {t('demo:plan_pro_feat5')}</Typography>
                             </Box>
                             <Button variant="contained" fullWidth size="large">
-                                Get Started
+                                {t('demo:plan_cta_primary')}
                             </Button>
                         </Card>
                         <Card sx={{p: 4, height: '100%', textAlign: 'center'}}>
                             <Typography variant="h5" sx={{mb: 2}}>
-                                Enterprise
+                                {t('demo:plan_enterprise')}
                             </Typography>
                             <Typography variant="h3" sx={{mb: 3}}>
-                                Custom
+                                {t('demo:plan_enterprise_price')}
                             </Typography>
                             <Box sx={{mb: 4, textAlign: 'left'}}>
-                                <Typography variant="body1" sx={{mb: 1}}>✓ Unlimited Storage</Typography>
-                                <Typography variant="body1" sx={{mb: 1}}>✓ Unlimited Bandwidth</Typography>
-                                <Typography variant="body1" sx={{mb: 1}}>✓ 24/7 Phone Support</Typography>
-                                <Typography variant="body1" sx={{mb: 1}}>✓ 99.99% Uptime SLA</Typography>
-                                <Typography variant="body1" sx={{mb: 1}}>✓ Dedicated Manager</Typography>
+                                <Typography variant="body1" sx={{mb: 1}}>✓ {t('demo:plan_ent_feat1')}</Typography>
+                                <Typography variant="body1" sx={{mb: 1}}>✓ {t('demo:plan_ent_feat2')}</Typography>
+                                <Typography variant="body1" sx={{mb: 1}}>✓ {t('demo:plan_ent_feat3')}</Typography>
+                                <Typography variant="body1" sx={{mb: 1}}>✓ {t('demo:plan_ent_feat4')}</Typography>
+                                <Typography variant="body1" sx={{mb: 1}}>✓ {t('demo:plan_ent_feat5')}</Typography>
                             </Box>
                             <Button variant="outlined" fullWidth size="large">
-                                Contact Sales
+                                {t('demo:plan_cta_contact')}
                             </Button>
                         </Card>
                     </Box>
@@ -650,10 +633,10 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
             >
                 <Container maxWidth="md">
                     <Typography variant="h2" sx={{mb: 3, fontSize: {xs: '2rem', md: '3rem'}}}>
-                        Ready to Get Started?
+                        {t('demo:cta_title')}
                     </Typography>
                     <Typography variant="h6" sx={{mb: 5, opacity: 0.9}}>
-                        Join thousands of companies already using Cloudify. No credit card required.
+                        {t('demo:cta_subtitle')}
                     </Typography>
                     <Button
                         variant="contained"
@@ -668,7 +651,7 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                             '&:hover': {bgcolor: 'grey.100'},
                         }}
                     >
-                        Start Your Free Trial
+                        {t('demo:cta_button')}
                     </Button>
                 </Container>
             </Box>
@@ -683,10 +666,10 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                     }}>
                         <Box>
                             <Typography variant="h6" sx={{color: 'white', mb: 2}}>
-                                Cloudify
+                                {t('demo:footer_brand')}
                             </Typography>
                             <Typography variant="body2" sx={{mb: 3}}>
-                                Modern cloud infrastructure for the next generation of applications.
+                                {t('demo:footer_tagline')}
                             </Typography>
                             <Box sx={{display: 'flex', gap: 2}}>
                                 {/* DQM Error: Links without aria-labels */}
@@ -694,28 +677,28 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                                     bgcolor: '#2d3748',
                                     color: 'white',
                                     '&:hover': {bgcolor: 'primary.main'}
-                                }}>
+                                }} aria-label={t('demo:footer_icon_speed')}>
                                     <Speed/>
                                 </IconButton>
                                 <IconButton component="a" href="#" sx={{
                                     bgcolor: '#2d3748',
                                     color: 'white',
                                     '&:hover': {bgcolor: 'primary.main'}
-                                }}>
+                                }} aria-label={t('demo:footer_icon_security')}>
                                     <Security/>
                                 </IconButton>
                                 <IconButton component="a" href="#" sx={{
                                     bgcolor: '#2d3748',
                                     color: 'white',
                                     '&:hover': {bgcolor: 'primary.main'}
-                                }}>
+                                }} aria-label={t('demo:footer_icon_growth')}>
                                     <TrendingUp/>
                                 </IconButton>
                             </Box>
                         </Box>
                         <Box>
                             <Typography variant="h6" sx={{color: 'white', mb: 2}}>
-                                Product
+                                {t('demo:footer_col_product')}
                             </Typography>
                             <Box sx={{display: 'flex', flexDirection: 'column', gap: 1}}>
                                 <Typography component="a" href="#" variant="body2" sx={{
@@ -723,34 +706,34 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                                     textDecoration: 'none',
                                     '&:hover': {color: 'primary.main'}
                                 }}>
-                                    Features
+                                    {t('demo:footer_link_features')}
                                 </Typography>
                                 <Typography component="a" href="#" variant="body2" sx={{
                                     color: 'inherit',
                                     textDecoration: 'none',
                                     '&:hover': {color: 'primary.main'}
                                 }}>
-                                    Pricing
+                                    {t('demo:footer_link_pricing')}
                                 </Typography>
                                 <Typography component="a" href="#" variant="body2" sx={{
                                     color: 'inherit',
                                     textDecoration: 'none',
                                     '&:hover': {color: 'primary.main'}
                                 }}>
-                                    Documentation
+                                    {t('demo:footer_link_docs')}
                                 </Typography>
                                 <Typography component="a" href="#" variant="body2" sx={{
                                     color: 'inherit',
                                     textDecoration: 'none',
                                     '&:hover': {color: 'primary.main'}
                                 }}>
-                                    API Reference
+                                    {t('demo:footer_link_api')}
                                 </Typography>
                             </Box>
                         </Box>
                         <Box>
                             <Typography variant="h6" sx={{color: 'white', mb: 2}}>
-                                Company
+                                {t('demo:footer_col_company')}
                             </Typography>
                             <Box sx={{display: 'flex', flexDirection: 'column', gap: 1}}>
                                 <Typography component="a" href="#" variant="body2" sx={{
@@ -758,34 +741,34 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                                     textDecoration: 'none',
                                     '&:hover': {color: 'primary.main'}
                                 }}>
-                                    About Us
+                                    {t('demo:footer_link_about')}
                                 </Typography>
                                 <Typography component="a" href="#" variant="body2" sx={{
                                     color: 'inherit',
                                     textDecoration: 'none',
                                     '&:hover': {color: 'primary.main'}
                                 }}>
-                                    Careers
+                                    {t('demo:footer_link_careers')}
                                 </Typography>
                                 <Typography component="a" href="#" variant="body2" sx={{
                                     color: 'inherit',
                                     textDecoration: 'none',
                                     '&:hover': {color: 'primary.main'}
                                 }}>
-                                    Blog
+                                    {t('demo:footer_link_blog')}
                                 </Typography>
                                 <Typography component="a" href="#" variant="body2" sx={{
                                     color: 'inherit',
                                     textDecoration: 'none',
                                     '&:hover': {color: 'primary.main'}
                                 }}>
-                                    Press Kit
+                                    {t('demo:footer_link_presskit')}
                                 </Typography>
                             </Box>
                         </Box>
                         <Box>
                             <Typography variant="h6" sx={{color: 'white', mb: 2}}>
-                                Support
+                                {t('demo:footer_col_support')}
                             </Typography>
                             <Box sx={{display: 'flex', flexDirection: 'column', gap: 1}}>
                                 <Typography component="a" href="#" variant="body2" sx={{
@@ -793,39 +776,39 @@ const LandingPage: React.FC<{ onOpenDQM: () => void; onOpenEditor: () => void }>
                                     textDecoration: 'none',
                                     '&:hover': {color: 'primary.main'}
                                 }}>
-                                    Help Center
+                                    {t('demo:footer_link_help')}
                                 </Typography>
                                 <Typography component="a" href="#" variant="body2" sx={{
                                     color: 'inherit',
                                     textDecoration: 'none',
                                     '&:hover': {color: 'primary.main'}
                                 }}>
-                                    Contact Us
+                                    {t('demo:footer_link_contact')}
                                 </Typography>
                                 <Typography component="a" href="#" variant="body2" sx={{
                                     color: 'inherit',
                                     textDecoration: 'none',
                                     '&:hover': {color: 'primary.main'}
                                 }}>
-                                    Status
+                                    {t('demo:footer_link_status')}
                                 </Typography>
                                 {/* DQM Error: Empty link */}
                                 <Typography component="a" href="#" variant="body2"
                                             sx={{color: 'inherit', textDecoration: 'none'}}>
-                                    {/* empty link */}
+                                    {t('demo:footer_link_cookies')}
                                 </Typography>
                             </Box>
                         </Box>
                     </Box>
                     <Box sx={{borderTop: '1px solid #2d3748', mt: 6, pt: 4, textAlign: 'center'}}>
                         <Typography variant="body2" color="text.secondary">
-                            © 2025 Cloudify. All rights reserved. |{' '}
+                            {t('demo:footer_copyright')}{' '}
                             <Typography component="a" href="#" sx={{color: 'inherit', textDecoration: 'none'}}>
-                                Privacy Policy
+                                {t('demo:footer_link_privacy')}
                             </Typography>{' '}
                             |{' '}
                             <Typography component="a" href="#" sx={{color: 'inherit', textDecoration: 'none'}}>
-                                Terms of Service
+                                {t('demo:footer_link_terms')}
                             </Typography>
                         </Typography>
                     </Box>
@@ -989,7 +972,7 @@ const TestApp: React.FC = () => {
                     // apiKey: 'your-api-key',
 
                     // -- Auth Backend for API Key management
-                    authBackendUrl: 'http://localhost:3001',
+                    authBackendUrl: window.location.origin,
                     useLocalStorage: true,
 
                     // -- Oauth2:  backend not yet implemented ...
