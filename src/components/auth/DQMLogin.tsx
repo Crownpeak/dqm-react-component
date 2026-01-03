@@ -209,14 +209,7 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
             // Redirect to login page with return URL
             const loginUrl = new URL(`${config.authBackendUrl}/auth/login`);
             loginUrl.searchParams.set('returnUrl', returnUrl);
-
-            import("@webcontainer/env").then(({isWebContainer}) => {
-                if (isWebContainer()) {
-                    window.open(loginUrl.toString(), '_blank');
-                } else {
-                    window.location.href = loginUrl.toString();
-                }
-            })
+            window.location.href = loginUrl.toString();
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : t('auth:errors.failed_redirect');
             setError(errorMessage);
