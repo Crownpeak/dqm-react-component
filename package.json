@@ -58,9 +58,10 @@
   },
   "homepage": "https://github.com/Crownpeak/dqm-react-component#readme",
   "scripts": {
-    "dev": "concurrently \"redis-server\" \"REDIS_URL=redis://localhost:6379 tsx watch server/demo.ts\"",
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
     "dev:client": "vite --host 0.0.0.0",
-    "dev:server": "concurrently \"redis-server\" \"REDIS_URL=redis://localhost:6379 tsx watch server/index.ts\"",
+    "dev:server": "concurrently \"redis-server\" \"npm run dev:server-waiting\"",
+    "dev:server-waiting": "wait-on tcp:3000 && REDIS_URL=redis://localhost:6379 tsx watch server/index.ts",
     "dev:auth-ui": "cd server-ui && vite --host 0.0.0.0",
     "build": "npm run build:lib && npm run build:widget && npm run build:server && npm run build:auth-ui",
     "build:lib": "tsc && vite build --mode library",
