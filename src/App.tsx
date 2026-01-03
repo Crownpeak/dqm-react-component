@@ -972,7 +972,7 @@ const TestApp: React.FC = () => {
                     // apiKey: 'your-api-key',
 
                     // -- Auth Backend for API Key management
-                    authBackendUrl: window.location.origin,
+                    // authBackendUrl: window.location.origin,
                     useLocalStorage: true,
 
                     // -- Oauth2:  backend not yet implemented ...
