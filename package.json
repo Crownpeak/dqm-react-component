@@ -60,8 +60,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
     "dev:client": "vite --host 0.0.0.0",
-    "dev:server": "concurrently \"redis-server\" \"npm run dev:server-waiting\"",
-    "dev:server-waiting": "wait-on tcp:5173 && REDIS_URL=redis://localhost:6379 tsx watch server/index.ts",
+    "dev:server": "concurrently \"redis-server\" \"REDIS_URL=redis://localhost:6379 tsx watch server/index.ts\"",
     "dev:auth-ui": "cd server-ui && vite --host 0.0.0.0",
     "build": "npm run build:lib && npm run build:widget && npm run build:server && npm run build:auth-ui",
     "build:lib": "tsc && vite build --mode library",
@@ -154,8 +153,7 @@
     "typescript-eslint": "^8.48.1",
     "vite": "^7.2.7",
     "vite-plugin-dts": "^4.5.4",
-    "vitest": "^2.1.0",
-    "wait-on": "^9.0.3"
+    "vitest": "^2.1.0"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
