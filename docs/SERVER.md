@@ -78,7 +78,7 @@ function App() {
 ```bash
 # Server Configuration
 PORT=3001                                    # Server port (default: 3001)
-CORS_ORIGINS=http://localhost:3000           # Allowed origins
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173  # Allowed origins
 
 # Redis Configuration (Optional - falls back to in-memory)
 REDIS_URL=redis://localhost:6379            # Local Redis

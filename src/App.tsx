@@ -980,7 +980,7 @@ const TestApp: React.FC = () => {
                     //     authUrl: 'https://dqm.crownpeak.com/oauth2/authorize',
                     //     clientId: 'crownpeak-dqm-react-component',
                     //     scope: 'dqm_api',
-                    //     redirectUri: 'http://localhost:3000/',
+                    //     redirectUri: 'http://localhost:5173/',
                     //     tokenUrl: 'https://dqm.crownpeak.com/oauth2/token',
                     // }
                 }}

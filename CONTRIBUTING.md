@@ -41,7 +41,7 @@ npm run dev
 ```
 
 This starts:
-- Client on `http://localhost:3000`
+- Client on `http://localhost:5173`
 - Backend on `http://localhost:3001`
 
 ### Building

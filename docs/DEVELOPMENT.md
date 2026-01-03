@@ -9,7 +9,7 @@ npm run dev
 ```
 
 This runs both servers concurrently:
-- **Frontend (Vite)**: http://localhost:3000
+- **Frontend (Vite)**: http://localhost:5173
 - **Backend (Express)**: http://localhost:3001
 
 ### Start Individual Servers
@@ -110,7 +110,7 @@ The component supports two modes:
 ### Test Backend Mode
 
 1. Start both servers: `npm run dev`
-2. Open http://localhost:3000
+2. Open http://localhost:5173
 3. Click "Login" and enter credentials
 4. Backend validates and issues session token
 5. All API calls go through http://localhost:3001
@@ -196,7 +196,7 @@ VITE_BACKEND_URL=http://localhost:3001
 
 ```env
 PORT=3001
-CORS_ORIGINS=http://localhost:3000
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 DQM_API_BASE_URL=https://api.crownpeak.net/dqm-cms/v1
 JWT_SECRET=your-secret-key
 ```
@@ -278,7 +278,7 @@ authRouter.get('/sessions/count', (req, res) => {
 
 **Solution:** Add frontend URL to `CORS_ORIGINS` in `.env`:
 ```env
-CORS_ORIGINS=http://localhost:3000
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 ```
 
 ### Port Already in Use

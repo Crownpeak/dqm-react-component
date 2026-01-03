@@ -26,13 +26,13 @@ npm run dev
 ```
 
 This starts:
-- ✅ **Frontend**: http://localhost:3000 (Vite Dev Server)
+- ✅ **Frontend**: http://localhost:5173 (Vite Dev Server)
 - ✅ **Backend**: http://localhost:3001 (Express API)
 
 ## Test the Integration
 
 ### 1. Open Frontend
-Navigate to http://localhost:3000
+Navigate to http://localhost:5173
 
 ### 2. Configure Backend Mode
 The test harness is already configured to use the backend:
@@ -63,7 +63,7 @@ The backend will:
 
 ```mermaid
 graph LR
-A[React App<br/>Port 3000]
+A[React App<br/>Port 5173]
 B[Express API<br/>Port 3001]
 C[Crownpeak DQM<br/>API]
 
@@ -156,7 +156,7 @@ Copy `.env.example` to `.env`:
 
 ```env
 PORT=3001
-CORS_ORIGINS=http://localhost:3000
+CORS_ORIGINS=http://localhost:5173
 DQM_API_BASE_URL=https://api.crownpeak.net/dqm-cms/v1
 JWT_SECRET=your-secret-key
 ```

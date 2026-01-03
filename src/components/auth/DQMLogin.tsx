@@ -211,7 +211,7 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
             loginUrl.searchParams.set('returnUrl', returnUrl);
 
             import("@webcontainer/env").then(({isWebContainer}) => {
-                if (isWebContainer()) {
+                if (isWebContainer) {
                     window.open(loginUrl.toString(), '_blank');
                 } else {
                     window.location.href = loginUrl.toString();
