@@ -43,6 +43,7 @@ jobs:
       with:
         commit-message: "Update wiki for version ${{ github.event.release.tag_name }}"
         path: ./wiki
+        strategy: init
 
     - uses: actions/checkout@v4
       name: Checkout Probe CLI Repository
