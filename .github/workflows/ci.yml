@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+concurrency:
+  group: build
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -31,6 +38,14 @@ jobs:
 
     - name: Builds Wiki
       run: npm run wiki:build
+    
+    # Testing
+    - name: Publish Wiki
+      uses: Andrew-Chen-Wang/github-wiki-action@v4
+      with:
+        commit_message: "Update wiki for version ${{ github.event.release.tag_name }}"
+        path: ./wiki
+        strategy: init
 
     - uses: actions/checkout@v4
       name: Checkout Probe CLI Repository
