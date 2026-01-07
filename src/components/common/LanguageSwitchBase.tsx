@@ -53,6 +53,7 @@ export const LanguageSwitchBase: React.FC<LanguageSwitchBaseProps> = ({
     return (
         <>
             <Fab
+                data-testid="language-switch"
                 size="small"
                 color="primary"
                 aria-label={switchLabel}
@@ -89,6 +90,7 @@ export const LanguageSwitchBase: React.FC<LanguageSwitchBaseProps> = ({
                 {(Object.keys(localeLabels) as LocaleCode[]).map((lang) => (
                     <MenuItem
                         key={lang}
+                        data-testid={`language-${lang}`}
                         selected={locale === lang}
                         onClick={() => {
                             onSelect(lang);

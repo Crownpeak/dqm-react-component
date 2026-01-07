@@ -1380,6 +1380,7 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
             <CssBaseline/>
             <Tooltip title={t('sidebar:fab_tooltip')} placement="left">
                 <StyledFab
+                    data-testid="dqm-fab"
                     overlayInfo={overlayInfo}
                     onClick={() => open ? onClose() : onOpen()}
                     aria-label={t('sidebar:fab_tooltip')}
@@ -1543,7 +1544,7 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
                                         </HeaderButton>
                                     </Tooltip>
                                 )}
-                                <HeaderButton onClick={onClose} aria-label={t('sidebar:close_sidebar')}>
+                                <HeaderButton data-testid="sidebar-close" onClick={onClose} aria-label={t('sidebar:close_sidebar')}>
                                     <CloseIcon/>
                                 </HeaderButton>
                             </Box>

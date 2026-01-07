@@ -48,8 +48,8 @@ test.describe('DQM Sidebar', () => {
     // Wait for drawer to be visible
     await page.waitForTimeout(500);
 
-    // Click close button
-    const closeButton = page.locator('[aria-label="close"]').or(page.locator('button').filter({ has: page.locator('svg') }).first());
+    // Click close button (use specific data-testid)
+    const closeButton = page.locator('[data-testid="sidebar-close"]');
     if (await closeButton.count() > 0) {
       await closeButton.first().click();
       // Drawer should be hidden after animation
