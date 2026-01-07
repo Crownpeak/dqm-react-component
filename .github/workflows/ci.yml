@@ -32,7 +32,7 @@ jobs:
     - uses: actions/checkout@v4
       name: Checkout Probe CLI Repository
       with:
-        name: probelabs/probe
+        repository: probelabs/probe
         ref: refs/tags/v0.6.0-rc178
         token: ${{ secrets.CLONE_TOKEN }}
         path: probe
