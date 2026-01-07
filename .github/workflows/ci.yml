@@ -43,7 +43,7 @@ jobs:
     - name: Publish Wiki
       uses: Andrew-Chen-Wang/github-wiki-action@v4
       with:
-        commit_message: "Update wiki for version ${{ github.event.release.tag_name }}"
+        commit-message: "Update wiki for version ${{ github.event.release.tag_name }}"
         path: ./wiki
         strategy: init
 
