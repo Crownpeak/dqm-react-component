@@ -2,9 +2,8 @@
  * AI Context - Central configuration and settings for AI features
  *
  * Manages:
- * - Translation settings (enabled, mode, model preset)
+ * - Translation settings (enabled, mode)
  * - Summary settings
- * - Backend selection (local WebLLM vs OpenAI)
  * - OpenAI credentials
  * - localStorage synchronization
  */
@@ -15,8 +14,6 @@ import { getLocalStorageItem, setLocalStorageItem } from '../../utils/localStora
 import type {
   AIContextValue,
   AIProviderProps,
-  AiBackend,
-  AiModelPreset,
   TranslationMode,
 } from './types';
 
@@ -63,26 +60,6 @@ export const AIProvider: React.FC<AIProviderProps> = ({
   const [translationDialogOpen, setTranslationDialogOpen] = useState<boolean>(false);
 
   // ============================================================================
-  // Model Settings
-  // ============================================================================
-
-  const [aiModelPreset, setAiModelPresetState] = useState<AiModelPreset>(() => {
-    if (typeof window === 'undefined') return 'fast';
-    const stored = getLocalStorageItem('dqm_ai_model_preset') as AiModelPreset | null;
-    if (stored === 'simple' || stored === 'reliable' || stored === 'accurate' || stored === 'fast') {
-      return stored;
-    }
-    return 'fast';
-  });
-
-  const presetToModelId = useMemo<Record<AiModelPreset, string>>(() => ({
-    fast: 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
-    simple: 'SmolLM2-360M-Instruct-q4f16_1-MLC',
-    reliable: 'Llama-3.2-3B-Instruct-q4f16_1-MLC',
-    accurate: 'Phi-3.5-mini-instruct-q4f16_1-MLC-1k',
-  }), []);
-
-  // ============================================================================
   // Summary Settings
   // ============================================================================
 
@@ -95,15 +72,8 @@ export const AIProvider: React.FC<AIProviderProps> = ({
   });
 
   // ============================================================================
-  // Backend Settings
+  // OpenAI Settings
   // ============================================================================
-
-  const [aiBackend, setAiBackendState] = useState<AiBackend>(() => {
-    if (typeof window === 'undefined') return 'openai';
-    const stored = getLocalStorageItem('dqm_ai_backend');
-    if (stored === 'openai' || stored === 'local') return stored;
-    return 'openai';
-  });
 
   const [openAiApiKey, setOpenAiApiKeyState] = useState<string>(() => {
     if (typeof window === 'undefined') return '';
@@ -111,8 +81,8 @@ export const AIProvider: React.FC<AIProviderProps> = ({
   });
 
   const [openAiModel, setOpenAiModelState] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'gpt-4o-mini';
-    return getLocalStorageItem('dqm_openai_model') ?? 'gpt-4o-mini';
+    if (typeof window === 'undefined') return 'gpt-4.1-mini';
+    return getLocalStorageItem('dqm_openai_model') ?? 'gpt-4.1-mini';
   });
 
   const [openAiBaseUrl, setOpenAiBaseUrlState] = useState<string>(() => {
@@ -132,16 +102,8 @@ export const AIProvider: React.FC<AIProviderProps> = ({
     setTranslationModeState(value);
   }, []);
 
-  const setAiModelPreset = useCallback((value: AiModelPreset) => {
-    setAiModelPresetState(value);
-  }, []);
-
   const setSummaryEnabled = useCallback((value: boolean) => {
     setSummaryEnabledState(value);
-  }, []);
-
-  const setAiBackend = useCallback((value: AiBackend) => {
-    setAiBackendState(value);
   }, []);
 
   const setOpenAiApiKey = useCallback((value: string) => {
@@ -172,18 +134,8 @@ export const AIProvider: React.FC<AIProviderProps> = ({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    setLocalStorageItem('dqm_ai_model_preset', aiModelPreset);
-  }, [aiModelPreset]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
     setLocalStorageItem('dqm_ai_summary_enabled', summaryEnabled ? 'true' : 'false');
   }, [summaryEnabled]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    setLocalStorageItem('dqm_ai_backend', aiBackend);
-  }, [aiBackend]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -213,20 +165,15 @@ export const AIProvider: React.FC<AIProviderProps> = ({
 
   const aiEnabled = summaryEnabled || translationEnabled || targetLang === 'en';
 
-  const desiredModelId = translationConfig?.modelId ?? presetToModelId[aiModelPreset];
-
   const computeBudgetMs = useMemo(() => {
     const baseBudget = translationConfig?.computeBudgetMs ?? 15_000;
     return translationMode === 'full' ? 120_000 : baseBudget;
   }, [translationConfig?.computeBudgetMs, translationMode]);
 
-  // Effective model ID depends on backend
-  const [loadedModelId, setLoadedModelId] = useState<string | null>(null);
+  // Effective model ID for OpenAI
   const effectiveModelId = useMemo(
-    () => aiBackend === 'openai'
-      ? (openAiModel.trim() || 'gpt-4o-mini')
-      : (loadedModelId ?? desiredModelId),
-    [aiBackend, desiredModelId, openAiModel, loadedModelId]
+    () => openAiModel.trim() || 'gpt-4.1-mini',
+    [openAiModel]
   );
 
   // ============================================================================
@@ -242,17 +189,11 @@ export const AIProvider: React.FC<AIProviderProps> = ({
     translationDialogOpen,
     setTranslationDialogOpen,
 
-    // Model Settings
-    aiModelPreset,
-    setAiModelPreset,
-
     // Summary Settings
     summaryEnabled,
     setSummaryEnabled,
 
-    // Backend Settings
-    aiBackend,
-    setAiBackend,
+    // OpenAI Settings
     openAiApiKey,
     setOpenAiApiKey,
     openAiModel,
@@ -264,12 +205,8 @@ export const AIProvider: React.FC<AIProviderProps> = ({
     targetLang,
     translationNeeded,
     aiEnabled,
-    desiredModelId,
     computeBudgetMs,
     effectiveModelId,
-
-    // Model Presets
-    presetToModelId,
 
     // Config
     translationConfig,
@@ -280,12 +217,8 @@ export const AIProvider: React.FC<AIProviderProps> = ({
     translationMode,
     setTranslationMode,
     translationDialogOpen,
-    aiModelPreset,
-    setAiModelPreset,
     summaryEnabled,
     setSummaryEnabled,
-    aiBackend,
-    setAiBackend,
     openAiApiKey,
     setOpenAiApiKey,
     openAiModel,
@@ -295,10 +228,8 @@ export const AIProvider: React.FC<AIProviderProps> = ({
     targetLang,
     translationNeeded,
     aiEnabled,
-    desiredModelId,
     computeBudgetMs,
     effectiveModelId,
-    presetToModelId,
     translationConfig,
     summaryConfig,
   ]);

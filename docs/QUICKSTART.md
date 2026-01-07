@@ -1,5 +1,3 @@
-# 🚀 Quick Start Guide
-
 ## Installation
 
 ```bash
@@ -22,12 +20,13 @@ npm run serve:widget   # preview demos at http://localhost:4173/test/demo-iife.h
 ## Start Development
 
 ```bash
-npm run dev
+npm run dev        # Vite dev server with integrated backend (port 5173)
+npm run dev:server # Standalone Express server with Redis (port 3001)
 ```
 
 This starts:
-- ✅ **Frontend**: http://localhost:5173 (Vite Dev Server)
-- ✅ **Backend**: http://localhost:3001 (Express API)
+- ✅ **Frontend + Backend**: http://localhost:5173 (Vite Dev Server with integrated backend API)
+- Backend routes (`/auth/*`, `/dqm/*`) are handled by Vite plugin
 
 ## Test the Integration
 
@@ -39,7 +38,7 @@ The test harness is already configured to use the backend:
 
 ```tsx
 config={{
-  authBackendUrl: 'http://localhost:3001',
+  authBackendUrl: '', // Empty = same origin (backend integrated in Vite dev server)
   useLocalStorage: true,
 }}
 ```
@@ -57,14 +56,14 @@ The backend will:
 ### 4. Analyze HTML
 - Paste HTML in the editor
 - Click "Start Analysis"
-- All requests go through `http://localhost:3001/dqm/*`
+- All requests go through `/dqm/*` on the same origin (port 5173 in dev)
 
 ## Architecture
 
 ```mermaid
 graph LR
-A[React App<br/>Port 5173]
-B[Express API<br/>Port 3001]
+A[React App + Backend API<br/>Port 5173]
+B[Vite Dev Server<br/>with integrated backend]
 C[Crownpeak DQM<br/>API]
 
     A -->|HTTP Requests| B
@@ -97,14 +96,14 @@ C[Crownpeak DQM<br/>API]
 
 ## Two Authentication Modes
 
-### Backend Mode (Production)
+### Backend Mode (Recommended)
 ```tsx
 config={{
-  authBackendUrl: 'http://localhost:3001',
+  authBackendUrl: '', // Dev: empty (same origin) | Prod: 'https://your-backend.com'
 }}
 ```
 - ✅ Secure session tokens
-- ✅ API keys never exposed to client
+- ✅ API keys remain server-side
 - ✅ Centralized access control
 
 ### Direct Mode (Development)
@@ -137,9 +136,9 @@ All DQM endpoints require `Authorization: Bearer <sessionToken>`
 
 ```bash
 # Development
-npm run dev              # Start both servers
-npm run dev:client       # Frontend only
-npm run dev:server       # Backend only
+npm run dev              # Vite dev server with integrated backend (port 5173)
+npm run dev:client       # Same as npm run dev
+npm run dev:server       # Standalone Express server with Redis (port 3001)
 
 # Build
 npm run build            # Build all
@@ -171,21 +170,21 @@ JWT_SECRET=your-secret-key
 
 ## Testing
 
-### Test Backend Health
+### Test Backend Health (Dev Mode - Port 5173)
 ```bash
-curl http://localhost:3001/health
+curl http://localhost:5173/health
 ```
 
-### Test Login
+### Test Login (Dev Mode)
 ```bash
-curl -X POST http://localhost:3001/auth/login \
+curl -X POST http://localhost:5173/auth/login \
   -H "Content-Type: application/json" \
   -d '{"apiKey":"YOUR_KEY","websiteId":"YOUR_ID"}'
 ```
 
-### Test Analysis
+### Test Analysis (Dev Mode)
 ```bash
-curl -X POST http://localhost:3001/dqm/assets \
+curl -X POST http://localhost:5173/dqm/assets \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"html":"<html><body>Test</body></html>"}'

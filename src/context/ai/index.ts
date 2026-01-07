@@ -15,9 +15,7 @@ export { useAISummary } from './useAISummary';
 
 // Types
 export type {
-  // Backend & Model Types
-  AiBackend,
-  AiModelPreset,
+  // Model Types
   TranslationMode,
   TranslationState,
   SummaryState,

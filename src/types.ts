@@ -10,15 +10,6 @@ export type AuthMode = 'props' | 'localStorage' | 'backend';
 // Session type - determines how API calls are made
 export type SessionType = 'direct' | 'backend'; // 'direct' = direct to DQM API, 'backend' = via proxy
 
-// OAuth2 Configuration
-export interface OAuth2Config {
-  authUrl: string;
-  tokenUrl: string;
-  clientId: string;
-  redirectUri: string;
-  scope?: string;
-}
-
 /**
  * Position for manual overlay offset configuration.
  * Specifies from which edge the offset should be applied.
@@ -89,8 +80,8 @@ export interface OverlayConfig {
   };
 }
 
-// WebLLM Translation configuration
-export interface WebLLMTranslationConfig {
+// Translation configuration
+export interface TranslationConfig {
   /**
    * Enable auto-translation by default (user can still toggle at runtime).
    * Default: false
@@ -98,21 +89,10 @@ export interface WebLLMTranslationConfig {
   enabledByDefault?: boolean;
 
   /**
-   * Optional WebLLM model id. When omitted, a small instruct model is selected automatically.
-   */
-  modelId?: string;
-
-  /**
-   * Translation compute budget in milliseconds (does not include model download time).
+   * Translation compute budget in milliseconds.
    * Default: 15000
    */
   computeBudgetMs?: number;
-
-  /**
-   * Persist model artifacts in IndexedDB (more durable than Cache API in many browsers).
-   * Default: true
-   */
-  useIndexedDBCache?: boolean;
 }
 
 // DQM Configuration
@@ -121,9 +101,8 @@ export interface DQMConfig {
   apiKey?: string;
   websiteId?: string;
   
-  // Backend authentication (OAuth2 or custom)
+  // Backend authentication
   authBackendUrl?: string;
-  oauth2Config?: OAuth2Config;
   
   // Storage preference
   useLocalStorage?: boolean; // Default: true
@@ -160,9 +139,9 @@ export interface DQMConfig {
   overlayConfig?: OverlayConfig;
 
   /**
-   * Optional in-browser translation of DQM API results using WebLLM.
+   * Optional translation configuration for DQM API results.
    */
-  translation?: WebLLMTranslationConfig;
+  translation?: TranslationConfig;
 
   /**
    * Optional AI summary configuration.

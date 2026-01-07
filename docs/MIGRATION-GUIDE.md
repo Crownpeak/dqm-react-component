@@ -1,616 +1,207 @@
-# Migration Guide
-
-This guide helps you upgrade from v1.0.x to v1.1.x of `@crownpeak/dqm-react-component`.
+This guide helps you upgrade between versions of `@crownpeak/dqm-react-component`.
 
 ## Table of Contents
-- [Overview](#overview)
-- [Breaking Changes](#breaking-changes)
-- [Migration Steps](#migration-steps)
-- [New Features](#new-features)
-- [localStorage Key Changes](#localstorage-key-changes)
-- [TypeScript Type Changes](#typescript-type-changes)
-- [Code Examples](#code-examples)
 
-## Overview
-
-**Version 1.1.0** introduces significant new features and architectural changes:
-
-- ✨ **AI-Powered Translation** (OpenAI + WebLLM)
-- ✨ **AI Summary Generation** (OpenAI)
-- 🌍 **Internationalization** (i18n with en, de, es)
-- 🔄 **Redux Store** for state management
-- 📦 **Improved Widget Bundles** (IIFE + ESM)
-- 🔧 **Centralized Logging** with debug mode
-
-**Upgrade Time:** ~15-30 minutes for typical projects
-
-**Breaking Changes:** Yes (i18n namespaces, Redux store, DQMConfig)
-
-## Breaking Changes
-
-### 1. i18n Namespace Restructuring
-
-**Impact:** HIGH - Affects all custom translations
-
-**v1.0.x (Old):**
-```typescript
-// Single 'common' namespace
-i18n.t('common:sidebar.title')
-i18n.t('common:auth.login')
-i18n.t('common:errors.network')
-```
-
-**v1.1.x (New):**
-```typescript
-// Granular namespaces
-i18n.t('sidebar:title')        // 'common' → 'sidebar'
-i18n.t('auth:login')            // 'common' → 'auth'
-i18n.t('errors:network')        // 'common' → 'errors'
-```
-
-**Migration Required:** If you provide custom translations via `DQMConfig.i18n`.
-
-**Why Changed:** Improves bundle splitting, reduces memory usage, aligns with i18next best practices.
+- [v1.1.0 → v1.2.0](#v110--v120)
+- [v1.0.x → v1.1.0](#v10x--v110)
 
 ---
 
-### 2. Redux Store Introduction
+## v1.1.0 → v1.2.0
 
-**Impact:** MEDIUM - Internal change, but affects advanced users
+**Release Date:** January 7, 2026
 
-**v1.0.x (Old):**
-```typescript
-// Component-level state with useState/useReducer
-const [authState, setAuthState] = useState({ ... });
-const [aiState, setAiState] = useState({ ... });
-```
+**Upgrade Time:** ~5 minutes (no breaking changes)
 
-**v1.1.x (New):**
-```typescript
-// Centralized Redux store
-import { store } from '@crownpeak/dqm-react-component';
+**Breaking Changes:** None ✅
 
-// Available slices:
-// - authSlice: Authentication state
-// - aiSlice: AI translation/summary state
-// - highlightSlice: Error highlight navigation state
-// - localeSlice: i18n language state
-```
+### Overview*
 
-**Migration Required:** Only if you directly access component internals (not recommended).
+Version 1.2.0 introduces powerful new features while maintaining full backward compatibility:
 
-**Why Changed:** Better state management, improved debugging, enables advanced features like AI progress tracking.
-
----
-
-### 3. DQMConfig.translation Property
-
-**Impact:** MEDIUM - New optional property for AI features
-
-**v1.0.x (Old):**
-```typescript
-interface DQMConfig {
-    websiteId: string;
-    apiKey: string;
-    overlayConfig?: { ... };
-}
-```
-
-**v1.1.x (New):**
-```typescript
-interface DQMConfig {
-    websiteId: string;
-    apiKey: string;
-    overlayConfig?: { ... };
-    
-    // NEW: AI Translation
-    translation?: {
-        enabled: boolean;
-        backend: 'openai' | 'webllm';
-        apiKey?: string;
-        model?: string;
-        targetLanguage?: string;
-        mode?: 'fast' | 'full';
-    };
-    
-    // NEW: AI Summary
-    summary?: {
-        enabled: boolean;
-        backend: 'openai';
-        apiKey?: string;
-        model?: string;
-    };
-}
-```
-
-**Migration Required:** No (backward compatible - translation is optional).
-
-**Why Changed:** Enables AI features without breaking existing configurations.
-
----
-
-### 4. localStorage Key Renames
-
-**Impact:** LOW - Automatic migration via migration script
-
-| v1.0.x Key | v1.1.x Key | Type |
-|------------|------------|------|
-| `dqm_quality_breakdown_expanded` | (unchanged) | boolean |
-| N/A | `dqm_translate_results_enabled` | boolean |
-| N/A | `dqm_ai_backend` | 'openai' \| 'webllm' |
-| N/A | `dqm_target_language` | string |
-| N/A | `dqm_ai_summary_enabled` | boolean |
-| N/A | `dqm_webllm_model` | string |
-| N/A | `dqm_translation_mode` | 'fast' \| 'full' |
-| N/A | `dqm_openai_api_key` | string |
-| N/A | `dqm_openai_model` | string |
-| N/A | `dqm_openai_summary_model` | string |
-| N/A | `dqm_locale` | 'en' \| 'de' \| 'es' |
-
-**Migration Required:** Run migration script to preserve user settings (if applicable).
-
----
-
-## Migration Steps
+- ✨ **AI-Powered Translation** - Translate checkpoint descriptions via OpenAI
+- ✨ **AI Summary Generation** - Generate concise bullet-point summaries
+- 🌍 **Internationalization (i18n)** - UI in English, German, Spanish
+- 🔄 **Redux Store** - Centralized state management (internal)
+- 🔧 **Centralized Logging** - Debug mode for troubleshooting
 
 ### Step 1: Update Package
 
 ```bash
-npm install @crownpeak/dqm-react-component@latest
+npm install @crownpeak/dqm-react-component@1.2.0
 ```
 
 Or with Yarn:
 
 ```bash
-yarn upgrade @crownpeak/dqm-react-component@latest
+yarn upgrade @crownpeak/dqm-react-component@1.2.0
 ```
 
-### Step 2: Update i18n Translations (If Custom)
+### Step 2: Verify (No Changes Required)
 
-If you provide custom translations, update namespace references:
+Your existing code continues to work without modifications:
 
-**Before (v1.0.x):**
 ```typescript
 import { DQMSidebar } from '@crownpeak/dqm-react-component';
 
+// This works exactly as before
 <DQMSidebar
     open={open}
-    onClose={onClose}
-    onOpen={onOpen}
-    config={{
-        websiteId: '...',
-        apiKey: '...',
-        i18n: {
-            resources: {
-                en: {
-                    common: {
-                        sidebar: {
-                            title: 'My Custom Title',
-                        },
-                        auth: {
-                            login: 'My Custom Login',
-                        },
-                    },
-                },
-            },
-        },
-    }}
+    onClose={() => setOpen(false)}
+    onOpen={() => setOpen(true)}
 />
 ```
 
-**After (v1.1.x):**
-```typescript
-import { DQMSidebar } from '@crownpeak/dqm-react-component';
+### New Features (Optional)
 
-<DQMSidebar
-    open={open}
-    onClose={onClose}
-    onOpen={onOpen}
-    config={{
-        websiteId: '...',
-        apiKey: '...',
-        i18n: {
-            resources: {
-                en: {
-                    sidebar: {  // 'common' → 'sidebar'
-                        title: 'My Custom Title',
-                    },
-                    auth: {     // 'common' → 'auth'
-                        login: 'My Custom Login',
-                    },
-                },
-            },
-        },
-    }}
-/>
-```
-
-**Available Namespaces in v1.1.x:**
-- `sidebar` - Sidebar UI strings
-- `auth` - Authentication-related strings
-- `errors` - Error messages
-- `ai` - AI feature strings (translation, summary)
-
-### Step 3: Enable AI Features (Optional)
-
-Add AI configuration to leverage new translation and summary features:
-
-```typescript
-<DQMSidebar
-    open={open}
-    onClose={onClose}
-    onOpen={onOpen}
-    config={{
-        websiteId: '...',
-        apiKey: '...',
-        
-        // NEW: Enable AI Translation
-        translation: {
-            enabled: true,
-            backend: 'openai',
-            apiKey: 'sk-...',
-            model: 'gpt-4o-mini',
-            targetLanguage: 'de',
-            mode: 'fast',
-        },
-        
-        // NEW: Enable AI Summary
-        summary: {
-            enabled: true,
-            backend: 'openai',
-            apiKey: 'sk-...',
-            model: 'gpt-4o-mini',
-        },
-    }}
-/>
-```
-
-See **[AI Features Guide](./AI-FEATURES.md)** for complete documentation.
-
-### Step 4: Run localStorage Migration (If Needed)
-
-If your users have existing localStorage data from v1.0.x, run this migration script on first load:
-
-```typescript
-/**
- * Migrate localStorage from v1.0.x to v1.1.x
- * Run this once on app initialization after upgrading
- */
-function migrateDQMLocalStorage() {
-    const version = localStorage.getItem('dqm_version');
-    
-    if (version === '1.1.0') {
-        return; // Already migrated
-    }
-    
-    // v1.0.x had minimal localStorage - nothing to migrate
-    // v1.1.x introduces new AI-related keys with defaults
-    
-    // Set defaults for new keys (if not already set by user)
-    if (!localStorage.getItem('dqm_translate_results_enabled')) {
-        localStorage.setItem('dqm_translate_results_enabled', 'false');
-    }
-    
-    if (!localStorage.getItem('dqm_ai_backend')) {
-        localStorage.setItem('dqm_ai_backend', 'openai');
-    }
-    
-    if (!localStorage.getItem('dqm_target_language')) {
-        localStorage.setItem('dqm_target_language', 'en');
-    }
-    
-    if (!localStorage.getItem('dqm_ai_summary_enabled')) {
-        localStorage.setItem('dqm_ai_summary_enabled', 'false');
-    }
-    
-    if (!localStorage.getItem('dqm_locale')) {
-        localStorage.setItem('dqm_locale', 'en');
-    }
-    
-    // Mark migration as complete
-    localStorage.setItem('dqm_version', '1.1.0');
-    
-    console.log('DQM localStorage migrated to v1.1.0');
-}
-
-// Run on app initialization
-migrateDQMLocalStorage();
-```
-
-### Step 5: Update TypeScript Types (If Using)
-
-Import new types for AI features:
-
-```typescript
-import type {
-    DQMSidebarProps,
-    DQMConfig,
-    TranslationConfig,     // NEW
-    SummaryConfig,         // NEW
-    TranslationProgress,   // NEW
-    SummaryStats,          // NEW
-} from '@crownpeak/dqm-react-component';
-```
-
-### Step 6: Test & Verify
-
-1. **Build:** Ensure no TypeScript errors
-   ```bash
-   npm run build
-   ```
-
-2. **Test:** Verify sidebar loads correctly
-   ```bash
-   npm run dev
-   ```
-
-3. **Check Console:** Look for migration messages or warnings
-
-4. **Test AI Features:** If enabled, verify translation and summary work
-
-## New Features
-
-### AI-Powered Translation
+#### AI-Powered Translation
 
 Translate checkpoint descriptions into any language:
 
 ```typescript
 <DQMSidebar
     open={open}
-    onClose={onClose}
-    onOpen={onOpen}
+    onClose={() => setOpen(false)}
+    onOpen={() => setOpen(true)}
     config={{
         websiteId: '...',
         apiKey: '...',
         translation: {
             enabled: true,
-            backend: 'openai',      // or 'webllm' for local inference
-            apiKey: 'sk-...',       // OpenAI API key (if backend: 'openai')
+            apiKey: 'sk-...',       // OpenAI API key
             model: 'gpt-4o-mini',   // or 'gpt-4o', 'gpt-4.1'
             targetLanguage: 'de',   // Target language (ISO 639-1)
-            mode: 'fast',           // 'fast' (15s timeout) or 'full' (120s)
+            mode: 'fast',           // 'fast' (15s) or 'full' (120s)
         },
     }}
 />
 ```
 
 **Key Features:**
-- **Backends:** OpenAI (cloud, fast) or WebLLM (local, private)
-- **Caching:** Automatic IndexedDB + In-Memory caching
-- **Modes:** Fast (15s timeout, fails gracefully) or Full (120s timeout, complete translation)
-- **Performance:** ~2-5s for 50 checkpoints (OpenAI) or ~30-120s (WebLLM)
+- Automatic IndexedDB + In-Memory caching
+- Fast mode (15s timeout, fails gracefully) or Full mode (120s)
+- ~2-5s for 50 checkpoints
 
 See **[AI Features Guide](./AI-FEATURES.md)** for complete documentation.
 
-### AI Summary Generation
+#### AI Summary Generation
 
-Generate concise bullet-point summaries of analysis results:
+Generate concise summaries of analysis results:
 
 ```typescript
 <DQMSidebar
     open={open}
-    onClose={onClose}
-    onOpen={onOpen}
+    onClose={() => setOpen(false)}
+    onOpen={() => setOpen(true)}
     config={{
         websiteId: '...',
         apiKey: '...',
         summary: {
             enabled: true,
-            backend: 'openai',      // Only OpenAI supported
             apiKey: 'sk-...',
-            model: 'gpt-4o-mini',   // or 'gpt-4o', 'gpt-4.1'
+            model: 'gpt-4o-mini',
         },
     }}
 />
 ```
 
 **Key Features:**
-- **Chunking:** Automatic chunking based on checkpoint count (single/chunk/tiny strategies)
-- **Caching:** Persistent IndexedDB cache
-- **Output:** 3-7 bullet points highlighting key issues
-- **Performance:** ~3-8s for 50 checkpoints
+- Automatic chunking based on checkpoint count
+- Persistent IndexedDB cache
+- 3-7 bullet points highlighting key issues
 
-### Internationalization (i18n)
+#### Internationalization (i18n)
 
-Switch languages dynamically:
+The UI now supports multiple languages:
 
-```typescript
-import { useTranslation } from 'react-i18next';
-
-function MyComponent() {
-    const { i18n } = useTranslation();
-    
-    return (
-        <button onClick={() => i18n.changeLanguage('de')}>
-            Deutsch
-        </button>
-    );
-}
-```
-
-**Supported Languages:**
-- `en` - English
+- `en` - English (default)
 - `de` - German (Deutsch)
 - `es` - Spanish (Español)
 
-**Storage:** Language preference saved to `localStorage.getItem('dqm_locale')`.
+Language preference is saved to `localStorage.getItem('dqm_locale')`.
 
-### Centralized Logging
+#### Debug Logging
 
 Enable debug logging for troubleshooting:
 
 ```typescript
-import { logger } from '@crownpeak/dqm-react-component';
-
-// Enable debug mode
-logger.setDebugMode(true);
-
-// All internal logs will now appear in console
-// Format: [DQM] [DEBUG] Message
-```
-
-**Log Levels:**
-- `logger.debug()` - Debug information (only in debug mode)
-- `logger.warn()` - Warnings (always shown)
-- `logger.error()` - Errors (always shown)
-
-**localStorage Control:**
-```typescript
-// Enable debug mode via localStorage
+// Via localStorage
 localStorage.setItem('dqm_debug', 'true');
 
-// Reload page to activate debug logging
+// Or programmatically
+import { logger } from '@crownpeak/dqm-react-component';
+logger.setDebugMode(true);
 ```
 
-## localStorage Key Changes
+### New TypeScript Types
 
-Complete list of localStorage keys in v1.1.x:
+```typescript
+import type {
+    // Existing types (unchanged)
+    DQMSidebarProps,
+    DQMConfig,
+    OverlayConfig,
+    
+    // NEW in v1.2.0
+    TranslationConfig,
+    SummaryConfig,
+    TranslationProgress,
+    SummaryStats,
+} from '@crownpeak/dqm-react-component';
+```
+
+### New localStorage Keys
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `dqm_apiKey` | string | - | DQM API key |
-| `dqm_websiteID` | string | - | DQM Website ID |
-| `dqm_quality_breakdown_expanded` | boolean | true | Quality breakdown accordion state |
-| `dqm_translate_results_enabled` | boolean | false | Toggle translation on/off |
-| `dqm_ai_backend` | 'openai'\|'webllm' | 'openai' | AI backend selection |
+| `dqm_translate_results_enabled` | boolean | false | Toggle translation |
 | `dqm_target_language` | string | 'en' | Target language (ISO 639-1) |
-| `dqm_ai_summary_enabled` | boolean | false | Toggle summary on/off |
-| `dqm_webllm_model` | string | 'Llama-3.2-1B-...' | WebLLM model selection |
-| `dqm_translation_mode` | 'fast'\|'full' | 'fast' | Translation timeout mode |
-| `dqm_openai_api_key` | string | - | OpenAI API key (if provided via UI) |
-| `dqm_openai_model` | string | 'gpt-4o-mini' | OpenAI translation model |
-| `dqm_openai_summary_model` | string | 'gpt-4o-mini' | OpenAI summary model |
+| `dqm_ai_summary_enabled` | boolean | false | Toggle summary |
+| `dqm_translation_mode` | 'fast'\|'full' | 'fast' | Translation mode |
+| `dqm_openai_apiKey` | string | - | OpenAI API key |
+| `dqm_openai_model` | string | 'gpt-4o-mini' | OpenAI model |
 | `dqm_locale` | 'en'\|'de'\|'es' | 'en' | UI language |
-| `dqm_debug` | boolean | false | Enable debug logging |
+| `dqm_debug` | boolean | false | Debug logging |
 
-**Migration:** v1.0.x keys are preserved. New keys are added with defaults.
+---
 
-## TypeScript Type Changes
+## v1.0.x → v1.1.0
 
-### New Types
+**Release Date:** December 17, 2025
 
-```typescript
-// AI Translation Configuration
-interface TranslationConfig {
-    enabled: boolean;
-    backend: 'openai' | 'webllm';
-    apiKey?: string;
-    model?: string;
-    targetLanguage?: string;
-    mode?: 'fast' | 'full';
-}
+**Upgrade Time:** ~5 minutes (no breaking changes)
 
-// AI Summary Configuration
-interface SummaryConfig {
-    enabled: boolean;
-    backend: 'openai';
-    apiKey?: string;
-    model?: string;
-}
+**Breaking Changes:** None ✅
 
-// Translation Progress Tracking
-interface TranslationProgress {
-    isTranslating: boolean;
-    progress: number;           // 0-100
-    translated: number;         // Number of checkpoints translated
-    total: number;              // Total checkpoints
-    mode: 'fast' | 'full';
-    backend: 'openai' | 'webllm';
-}
+### Overview
 
-// Summary Generation Stats
-interface SummaryStats {
-    isGenerating: boolean;
-    summaryText?: string;       // Generated summary (3-7 bullet points)
-    chunkingStrategy: 'single' | 'chunk' | 'tiny';
-    tokensUsed?: number;
-    estimatedCost?: number;     // USD
-}
+Version 1.1.0 adds new features while maintaining full backward compatibility:
 
-// Redux Store State
-interface RootState {
-    auth: AuthState;
-    ai: AIState;
-    highlight: HighlightState;
-    locale: LocaleState;
-}
+- ✨ **Overlay Configuration** - Customize toolbar/overlay detection
+- ✨ **Standalone Widget Bundle** - IIFE + ESM bundles for embedding
+- ✨ **Enhanced `useDomPresence` Hook** - Better element position detection
+- ✨ **`disableLogout` Config Option** - Hide logout when managed externally
+
+### Step 1: Update Package
+
+```bash
+npm install @crownpeak/dqm-react-component@1.1.0
 ```
 
-### Updated Types
+Or with Yarn:
 
-```typescript
-// DQMConfig (v1.1.x)
-interface DQMConfig {
-    websiteId: string;
-    apiKey: string;
-    overlayConfig?: OverlayConfig;
-    translation?: TranslationConfig;  // NEW
-    summary?: SummaryConfig;          // NEW
-}
-
-// DQMSidebarProps (unchanged, but config updated)
-interface DQMSidebarProps {
-    open: boolean;
-    onClose: () => void;
-    onOpen: () => void;
-    config?: DQMConfig;
-    debugHtml?: string;
-}
+```bash
+yarn upgrade @crownpeak/dqm-react-component@1.1.0
 ```
 
-## Code Examples
+### Step 2: Verify (No Changes Required)
 
-### Before & After: Basic Usage
+Your existing code continues to work without modifications:
 
-**v1.0.x:**
 ```typescript
 import { DQMSidebar } from '@crownpeak/dqm-react-component';
 
-function App() {
-    const [open, setOpen] = useState(false);
-    
-    React.useEffect(() => {
-        localStorage.setItem('dqm_apiKey', 'your-api-key');
-        localStorage.setItem('dqm_websiteID', 'your-website-id');
-    }, []);
-    
-    return (
-        <DQMSidebar
-            open={open}
-            onClose={() => setOpen(false)}
-            onOpen={() => setOpen(true)}
-        />
-    );
-}
-```
-
-**v1.1.x (Backward Compatible):**
-```typescript
-import { DQMSidebar } from '@crownpeak/dqm-react-component';
-
-function App() {
-    const [open, setOpen] = useState(false);
-    
-    // Same as v1.0.x - no changes required
-    React.useEffect(() => {
-        localStorage.setItem('dqm_apiKey', 'your-api-key');
-        localStorage.setItem('dqm_websiteID', 'your-website-id');
-    }, []);
-    
-    return (
-        <DQMSidebar
-            open={open}
-            onClose={() => setOpen(false)}
-            onOpen={() => setOpen(true)}
-        />
-    );
-}
-```
-
-### Before & After: With AI Features
-
-**v1.0.x (No AI):**
-```typescript
+// This works exactly as before
 <DQMSidebar
     open={open}
     onClose={() => setOpen(false)}
@@ -618,100 +209,120 @@ function App() {
 />
 ```
 
-**v1.1.x (With AI):**
+### New Features (Optional)
+
+#### Overlay Configuration
+
+If you have toolbars or overlays that interfere with sidebar positioning:
+
 ```typescript
 <DQMSidebar
     open={open}
     onClose={() => setOpen(false)}
     onOpen={() => setOpen(true)}
     config={{
+        websiteId: '...',
+        apiKey: '...',
+        overlayConfig: {
+            selector: '.my-toolbar',        // CSS selector for overlay
+            validateIframe: true,           // Check iFrame contentWindow
+            pollMs: 1000,                   // Polling interval (ms)
+            manualOffset: {                 // Manual offset override
+                position: 'top',
+                pixels: 50,
+            },
+        },
+    }}
+/>
+```
+
+#### Disable Logout Button
+
+If your app manages authentication externally:
+
+```typescript
+<DQMSidebar
+    open={open}
+    onClose={() => setOpen(false)}
+    onOpen={() => setOpen(true)}
+    config={{
+        websiteId: '...',
+        apiKey: '...',
+        disableLogout: true,  // Hides the logout button
+    }}
+/>
+```
+
+#### Standalone Widget Bundle
+
+For embedding on external sites without React:
+
+```html
+<!-- IIFE Bundle -->
+<script src="https://unpkg.com/@crownpeak/dqm-react-component/dist/dqm-widget.iife.js"></script>
+<script>
+    window.initDQMWidget({
         websiteId: 'your-website-id',
-        apiKey: 'your-dqm-api-key',
-        
-        // NEW: AI Translation
-        translation: {
-            enabled: true,
-            backend: 'openai',
-            apiKey: 'sk-...',
-            model: 'gpt-4o-mini',
-            targetLanguage: 'de',
-            mode: 'fast',
-        },
-        
-        // NEW: AI Summary
-        summary: {
-            enabled: true,
-            backend: 'openai',
-            apiKey: 'sk-...',
-            model: 'gpt-4o-mini',
-        },
-    }}
-/>
+        apiKey: 'your-api-key',
+    });
+</script>
 ```
 
-### Before & After: Custom i18n
+See **[Widget Bundle Guide](./WIDGET-GUIDE.md)** for complete documentation.
 
-**v1.0.x:**
+### New TypeScript Types
+
 ```typescript
-<DQMSidebar
-    open={open}
-    onClose={() => setOpen(false)}
-    onOpen={() => setOpen(true)}
-    config={{
-        i18n: {
-            resources: {
-                en: {
-                    common: {  // Single namespace
-                        sidebar: { title: 'Quality Analysis' },
-                        auth: { login: 'Login' },
-                        errors: { network: 'Network error' },
-                    },
-                },
-            },
-        },
-    }}
-/>
+import type {
+    // Existing types (unchanged)
+    DQMSidebarProps,
+    DQMConfig,
+    
+    // NEW in v1.1.0
+    OverlayConfig,
+    OverlayOffsetPosition,
+    OverlayInfo,
+    OverlayPosition,
+} from '@crownpeak/dqm-react-component';
 ```
 
-**v1.1.x:**
-```typescript
-<DQMSidebar
-    open={open}
-    onClose={() => setOpen(false)}
-    onOpen={() => setOpen(true)}
-    config={{
-        i18n: {
-            resources: {
-                en: {
-                    sidebar: { title: 'Quality Analysis' },  // Separate namespace
-                    auth: { login: 'Login' },                // Separate namespace
-                    errors: { network: 'Network error' },    // Separate namespace
-                },
-            },
-        },
-    }}
-/>
-```
-
-## Troubleshooting
-
-### Issue: "Namespace 'common' not found" error
-
-**Cause:** Using old `common` namespace in custom translations.
-
-**Solution:** Split translations into granular namespaces (`sidebar`, `auth`, `errors`).
+### New Hooks
 
 ```typescript
-// Before
-resources: { en: { common: { ... } } }
+import { useOverlayResistant } from '@crownpeak/dqm-react-component';
 
-// After
-resources: { en: { sidebar: { ... }, auth: { ... }, errors: { ... } } }
+// Returns overlay information for custom positioning
+const overlayInfo = useOverlayResistant({
+    selector: '.my-toolbar',
+    validateIframe: true,
+});
+// overlayInfo.present: boolean
+// overlayInfo.height: number
+// overlayInfo.position: 'top' | 'bottom' | 'left' | 'right' | 'center'
+// overlayInfo.contentOffset: { top, bottom, left, right }
 ```
 
 ---
 
-### Issue: Translation not working after upgrade
+## Troubleshooting
+
+### Issue: Overlay not detected correctly
+
+**Cause:** Cross-origin iFrame or complex DOM structure.
+
+**Solution:** Use `manualOffset` configuration:
+
+```typescript
+overlayConfig: {
+    selector: '.my-overlay',
+    manualOffset: {
+        position: 'top',
+        pixels: 60,
+    },
+}
+```
+
+### Issue: Translation not working
 
 **Cause:** Missing `translation.enabled` or invalid API key.
 
@@ -721,38 +332,26 @@ resources: { en: { sidebar: { ... }, auth: { ... }, errors: { ... } } }
 config={{
     translation: {
         enabled: true,          // Must be true
-        backend: 'openai',
         apiKey: 'sk-...',       // Valid OpenAI API key
         model: 'gpt-4o-mini',
         targetLanguage: 'de',
-        mode: 'fast',
     },
 }}
 ```
 
----
-
-### Issue: localStorage keys not migrating
-
-**Cause:** Migration script not run.
-
-**Solution:** Run migration script (see Step 4 above).
-
----
-
 ### Issue: TypeScript errors after upgrade
 
-**Cause:** Type definitions changed.
+**Cause:** Missing type imports.
 
 **Solution:** Update imports:
 
 ```typescript
-// Add new types
 import type {
     DQMSidebarProps,
     DQMConfig,
-    TranslationConfig,
-    SummaryConfig,
+    OverlayConfig,       // v1.1.0+
+    TranslationConfig,   // v1.2.0+
+    SummaryConfig,       // v1.2.0+
 } from '@crownpeak/dqm-react-component';
 ```
 
@@ -760,8 +359,9 @@ import type {
 
 ## See Also
 
-- **[AI Features Guide](./AI-FEATURES.md)** - Complete AI documentation
+- **[AI Features Guide](./AI-FEATURES.md)** - Complete AI documentation (v1.2.0+)
+- **[Widget Bundle Guide](./WIDGET-GUIDE.md)** - Standalone widget documentation (v1.1.0+)
+- **[Quick Start Guide](./QUICKSTART.md)** - Getting started
 - **[API Reference](./API-REFERENCE.md)** - Full TypeScript API
-- **[Examples](./EXAMPLES.md)** - Integration examples with AI
+- **[Examples](./EXAMPLES.md)** - Integration examples
 - **[Troubleshooting](./TROUBLESHOOTING.md)** - Common issues and solutions
-- **[CHANGELOG](./CHANGELOG.md)** - Detailed release notes

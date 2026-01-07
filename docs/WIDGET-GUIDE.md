@@ -1,5 +1,3 @@
-# Widget Bundle Guide
-
 This guide covers using the DQM React Component as a standalone widget via the pre-built IIFE or ESM bundles. This allows you to use DQM without a build pipeline or React setup.
 
 ## Table of Contents
@@ -111,32 +109,29 @@ window.DQMWidget = {
     <script src="https://unpkg.com/@crownpeak/dqm-react-component/dist/dqm-widget.iife.js"></script>
     
     <script>
-        // Initialize widget with AI translation
+        // Initialize widget with AI features
         const cleanup = window.DQMWidget.loadDQMWidget({
             open: true, // Auto-open sidebar
             config: {
                 websiteId: 'your-website-id',
                 apiKey: 'your-dqm-api-key',
                 
-                // AI Translation
+                // AI Translation (API key configured via localStorage)
                 translation: {
-                    enabled: true,
-                    backend: 'openai',
-                    apiKey: 'sk-...',
-                    model: 'gpt-4o-mini',
-                    targetLanguage: 'de',
-                    mode: 'fast',
+                    enabledByDefault: true,
+                    computeBudgetMs: 15000, // 15 seconds timeout
                 },
                 
-                // AI Summary
+                // AI Summary (API key configured via localStorage)
                 summary: {
-                    enabled: true,
-                    backend: 'openai',
-                    apiKey: 'sk-...',
-                    model: 'gpt-4o-mini',
+                    timeoutMs: 30000, // 30 seconds timeout
                 }
             }
         });
+        
+        // Set OpenAI API key via localStorage
+        localStorage.setItem('dqm_openai_apiKey', 'sk-...');
+        localStorage.setItem('dqm_openai_model', 'gpt-4o-mini');
 
         // Optional: Remove widget later
         // cleanup();
@@ -226,7 +221,7 @@ flowchart TD
     H -->|Yes| I[Open Sidebar]
     H -->|No| J[Show FAB Button]
     
-    I --> K[Fetch HTML from DOM]
+    I --> K[Extract HTML from current page]
     K --> L[Send to DQM API]
     L --> M[Poll for Analysis Result]
     M --> N{Analysis Complete?}
@@ -391,7 +386,7 @@ dqm-widget-wordpress/
 /**
  * Plugin Name: Crownpeak DQM Widget
  * Description: Adds Crownpeak Digital Quality Management to your WordPress site
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Crownpeak
  */
 
@@ -489,21 +484,16 @@ interface DQMConfig {
     };
 
     // AI Translation (optional)
+    // Note: OpenAI API key is configured via localStorage (dqm_openai_apiKey)
     translation?: {
-        enabled: boolean;
-        backend: 'openai' | 'webllm';
-        apiKey?: string;            // Required for OpenAI
-        model?: string;             // e.g., 'gpt-4o-mini', 'Llama-3.2-1B-Instruct-q4f16_1-MLC'
-        targetLanguage?: string;    // ISO 639-1 code (e.g., 'de', 'es', 'fr')
-        mode?: 'fast' | 'full';     // fast: 15s timeout, full: 120s timeout
+        enabledByDefault?: boolean;  // Enable translation by default
+        computeBudgetMs?: number;    // Timeout in ms (default: 15000 for fast mode)
     };
 
     // AI Summary (optional)
+    // Note: OpenAI API key is configured via localStorage (dqm_openai_apiKey)
     summary?: {
-        enabled: boolean;
-        backend: 'openai';          // Only OpenAI supported
-        apiKey?: string;
-        model?: string;             // e.g., 'gpt-4o-mini', 'gpt-4o'
+        timeoutMs?: number;          // Timeout in ms (default: 30000)
     };
 }
 ```
@@ -511,17 +501,19 @@ interface DQMConfig {
 ### Environment-Specific Configuration
 
 ```javascript
+// Configure OpenAI API key via localStorage
+localStorage.setItem('dqm_openai_apiKey', 'sk-...');
+localStorage.setItem('dqm_openai_model', 'gpt-4o-mini');
+localStorage.setItem('dqm_target_language', 'de');
+
 // Development
 window.DQMWidget.loadDQMWidget({
     config: {
         websiteId: 'dev-website-id',
         apiKey: 'dev-api-key',
         translation: {
-            enabled: true,
-            backend: 'webllm', // Use local inference in dev
-            model: 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
-            targetLanguage: 'de',
-            mode: 'full',
+            enabledByDefault: true,
+            computeBudgetMs: 30000, // 30s for full mode
         }
     }
 });
@@ -532,18 +524,11 @@ window.DQMWidget.loadDQMWidget({
         websiteId: 'prod-website-id',
         apiKey: 'prod-api-key',
         translation: {
-            enabled: true,
-            backend: 'openai', // Use OpenAI in prod for speed
-            apiKey: 'sk-...',
-            model: 'gpt-4o-mini',
-            targetLanguage: 'de',
-            mode: 'fast',
+            enabledByDefault: true,
+            computeBudgetMs: 15000, // 15s for fast mode
         },
         summary: {
-            enabled: true,
-            backend: 'openai',
-            apiKey: 'sk-...',
-            model: 'gpt-4o-mini',
+            timeoutMs: 30000,
         }
     }
 });
@@ -633,15 +618,14 @@ location /dqm-widget.iife.js {
 **Symptom:** Translation or summary not appearing.
 
 **Solutions:**
-1. Check OpenAI API key is valid (if using OpenAI backend)
-2. Verify WebGPU support (if using WebLLM backend)
-3. Check browser console for AI-related errors
-4. Ensure localStorage keys are set correctly
+1. Check OpenAI API key is valid
+2. Check browser console for AI-related errors
+3. Ensure localStorage keys are set correctly
 
 ```javascript
 // Debug AI configuration
 console.log('Translation Enabled:', localStorage.getItem('dqm_translate_results_enabled'));
-console.log('AI Backend:', localStorage.getItem('dqm_ai_backend'));
+console.log('OpenAI API Key Set:', !!localStorage.getItem('dqm_openai_apiKey'));
 console.log('Target Language:', localStorage.getItem('dqm_target_language'));
 console.log('Summary Enabled:', localStorage.getItem('dqm_ai_summary_enabled'));
 ```

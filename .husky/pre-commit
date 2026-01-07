@@ -1,0 +1,5 @@
+# Run license compliance check before commit
+npm run licenses:check
+
+# Run tests
+npm run test:run

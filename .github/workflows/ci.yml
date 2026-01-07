@@ -22,9 +22,30 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
     
     - name: Install dependencies
-      run: npm ci
+      run: npm i
+
+    - uses: actions/checkout@v4
+      name: Checkout Probe CLI Repository
+      with:
+        name: probelabs/probe
+        ref: refs/tags/v0.6.0-rc178
+        token: ${{ secrets.CLONE_TOKEN }}
+        path: probe
+
+    - name: Build Probe CLI
+      working-directory: ./probe
+      run: cargo build --release
+
+    - name: Add Probe CLI to PATH
+      run: cargo install --path ./probe
+
+    - name: Run Tests
+      run: npm test
     
     - name: Lint
       run: npm run lint || true
@@ -42,4 +63,12 @@ jobs:
       run: npm run build:widget
     
     - name: Check bundle size
+      run: npm pack --dry-run
+
+    - name: Build MCP Server
+      working-directory: ./mcp-server
+      run: npm run build
+
+    - name: Check MCP Bundle Size
+      working-directory: ./mcp-server
       run: npm pack --dry-run

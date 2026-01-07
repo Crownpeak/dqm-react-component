@@ -8,7 +8,7 @@
 
 set -e
 
-WIKI_REPO="https://github.com/Crownpeak/dqm-react-component.wiki.git"
+WIKI_REPO="git@github.com:spirit-wiegmann/dqm-react-component.wiki.git"
 WIKI_DIR="dqm-react-component.wiki"
 COMMIT_MSG="${1:-Update documentation}"
 
@@ -64,7 +64,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     
     echo ""
     echo "✅ Deployment complete!"
-    echo "📖 View wiki: https://github.com/Crownpeak/dqm-react-component/wiki"
+    echo "📖 View wiki: https://github.com/spirit-wiegmann/dqm-react-component/wiki"
 else
     echo "❌ Deployment cancelled"
     exit 1

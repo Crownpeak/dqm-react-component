@@ -1,5 +1,3 @@
-# API Reference
-
 Complete TypeScript API documentation for `@crownpeak/dqm-react-component`.
 
 ## Table of Contents
@@ -126,6 +124,44 @@ function App() {
 
 ---
 
+### withErrorBoundary
+
+Higher-Order Component (HOC) to wrap any component with an ErrorBoundary.
+
+```typescript
+import { withErrorBoundary } from '@crownpeak/dqm-react-component';
+
+const SafeComponent = withErrorBoundary(MyComponent, {
+    resetKeys: ['some-key'],
+});
+```
+
+#### Signature
+
+```typescript
+function withErrorBoundary<P extends object>(
+    Component: React.ComponentType<P>,
+    errorBoundaryProps?: Omit<ErrorBoundaryProps, 'children'>
+): React.FC<P>;
+```
+
+#### Example
+
+```typescript
+import { withErrorBoundary } from '@crownpeak/dqm-react-component';
+
+// Wrap a component that might throw errors
+const SafeDQMIntegration = withErrorBoundary(DQMIntegration, {
+    resetKeys: [userId, pageId],
+});
+
+function App() {
+    return <SafeDQMIntegration userId={userId} pageId={pageId} />;
+}
+```
+
+---
+
 ## Configuration
 
 ### DQMConfig
@@ -138,7 +174,6 @@ interface DQMConfig {
     apiKey?: string;
     websiteId?: string;
     authBackendUrl?: string;
-    oauth2Config?: OAuth2Config;
     
     // Storage & Behavior
     useLocalStorage?: boolean;      // Default: true
@@ -160,8 +195,7 @@ interface DQMConfig {
 |----------|------|---------|-------------|
 | `apiKey` | `string` | - | DQM API key (direct auth, highest priority) |
 | `websiteId` | `string` | - | DQM Website ID (direct auth) |
-| `authBackendUrl` | `string` | - | Backend server URL for OAuth2 or proxy auth |
-| `oauth2Config` | `OAuth2Config` | - | OAuth2 configuration object |
+| `authBackendUrl` | `string` | - | Backend server URL for proxy auth |
 
 #### Storage & Behavior Properties
 
@@ -229,61 +263,28 @@ overlayConfig: {
 
 ### TranslationConfig
 
-AI translation configuration (OpenAI or WebLLM).
+AI translation configuration.
 
 ```typescript
 interface TranslationConfig {
-    enabled: boolean;
-    backend: 'openai' | 'webllm';
-    apiKey?: string;                // Required for OpenAI
-    model?: string;
-    targetLanguage?: string;        // ISO 639-1 code (e.g., 'de', 'es', 'fr')
-    mode?: 'fast' | 'full';
+    enabledByDefault?: boolean;     // Default: false
+    computeBudgetMs?: number;       // Default: 15000
 }
 ```
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `enabled` | `boolean` | - | Enable AI translation (required) |
-| `backend` | `'openai' \| 'webllm'` | - | Translation backend (required) |
-| `apiKey` | `string` | - | OpenAI API key (required if backend: 'openai') |
-| `model` | `string` | `'gpt-4o-mini'` (OpenAI) / `'Llama-3.2-1B-Instruct-q4f16_1-MLC'` (WebLLM) | Model identifier |
-| `targetLanguage` | `string` | `'en'` | Target language (ISO 639-1 code) |
-| `mode` | `'fast' \| 'full'` | `'fast'` | Translation timeout mode (fast: 15s, full: 120s) |
+| `enabledByDefault` | `boolean` | `false` | Enable auto-translation by default (user can toggle at runtime) |
+| `computeBudgetMs` | `number` | `15000` | Translation compute budget in milliseconds |
 
-#### OpenAI Models
-
-- `gpt-4o-mini` - Fast, cost-effective (recommended)
-- `gpt-4o` - Better quality, higher cost
-- `gpt-4.1` - Latest model, highest quality
-
-#### WebLLM Models
-
-- `Llama-3.2-1B-Instruct-q4f16_1-MLC` - Fast, 1.5GB download
-- `Llama-3.2-3B-Instruct-q4f32_1-MLC` - Better quality, 3GB download
-- `SmolLM2-360M-Instruct-q4f16_1-MLC` - Ultra-fast, 500MB download
-- `Phi-3.5-mini-instruct-q4f16_1-MLC` - Balanced, 2GB download
+> **Note:** OpenAI API configuration (API key, model, target language) is managed via localStorage keys. See [localStorage Keys](#localstorage-keys) section.
 
 #### Example
 
 ```typescript
-// OpenAI Translation
 translation: {
-    enabled: true,
-    backend: 'openai',
-    apiKey: 'sk-...',
-    model: 'gpt-4o-mini',
-    targetLanguage: 'de',
-    mode: 'fast',
-}
-
-// WebLLM Translation (Local)
-translation: {
-    enabled: true,
-    backend: 'webllm',
-    model: 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
-    targetLanguage: 'de',
-    mode: 'full',
+    enabledByDefault: true,
+    computeBudgetMs: 30000,
 }
 ```
 
@@ -291,71 +292,25 @@ translation: {
 
 ### SummaryConfig
 
-AI summary generation configuration (OpenAI only).
+AI summary generation configuration.
 
 ```typescript
 interface SummaryConfig {
-    enabled: boolean;
-    backend: 'openai';
-    apiKey?: string;
-    model?: string;
-    timeoutMs?: number;
+    timeoutMs?: number;             // Default: 45000
 }
 ```
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `enabled` | `boolean` | - | Enable AI summary (required) |
-| `backend` | `'openai'` | - | Summary backend (only OpenAI supported) |
-| `apiKey` | `string` | - | OpenAI API key |
-| `model` | `string` | `'gpt-4o-mini'` | OpenAI model |
-| `timeoutMs` | `number` | `45000` | Summary generation timeout (ms) |
+| `timeoutMs` | `number` | `45000` | Summary generation timeout in milliseconds |
+
+> **Note:** OpenAI API configuration (API key, model) is managed via localStorage keys. See [localStorage Keys](#localstorage-keys) section.
 
 #### Example
 
 ```typescript
 summary: {
-    enabled: true,
-    backend: 'openai',
-    apiKey: 'sk-...',
-    model: 'gpt-4o-mini',
-    timeoutMs: 45000,
-}
-```
-
----
-
-### OAuth2Config
-
-OAuth2 authentication configuration for backend server integration.
-
-```typescript
-interface OAuth2Config {
-    authUrl: string;
-    tokenUrl: string;
-    clientId: string;
-    redirectUri: string;
-    scope?: string;
-}
-```
-
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `authUrl` | `string` | ✅ | Authorization endpoint URL |
-| `tokenUrl` | `string` | ✅ | Token exchange endpoint URL |
-| `clientId` | `string` | ✅ | OAuth2 client ID |
-| `redirectUri` | `string` | ✅ | Callback URL after authorization |
-| `scope` | `string` | ❌ | OAuth2 scope (e.g., 'openid profile') |
-
-#### Example
-
-```typescript
-oauth2Config: {
-    authUrl: 'https://auth.example.com/oauth/authorize',
-    tokenUrl: 'https://auth.example.com/oauth/token',
-    clientId: 'your-client-id',
-    redirectUri: 'https://yourapp.com/callback',
-    scope: 'openid profile',
+    timeoutMs: 60000,
 }
 ```
 
@@ -365,248 +320,312 @@ oauth2Config: {
 
 ### AI Hooks
 
+The AI hooks are exported from `@crownpeak/dqm-react-component` for advanced usage. They are designed to work together as a composable system.
+
 #### useAIEngine
 
-Hook for accessing AI engine state (translation + summary).
+Hook for managing AI engine initialization and access (OpenAI client).
 
 ```typescript
 import { useAIEngine } from '@crownpeak/dqm-react-component';
+import type { UseAIEngineOptions, UseAIEngineReturn } from '@crownpeak/dqm-react-component';
 
 function MyComponent() {
-    const {
-        backend,                    // 'openai' | 'webllm'
-        isReady,                    // boolean
-        initialize,                 // (backend: AIBackend) => Promise<void>
-        cleanup,                    // () => Promise<void>
-    } = useAIEngine();
+    const engine = useAIEngine({
+        enabled: true,
+        openAiApiKey: 'sk-...',
+        openAiModel: 'gpt-4.1-mini',        // Optional, default: 'gpt-4.1-mini'
+        openAiBaseUrl: 'https://api.openai.com/v1',  // Optional
+    });
 }
 ```
 
-##### Returns
+##### Options (UseAIEngineOptions)
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `enabled` | `boolean` | ✅ | Whether AI features are enabled |
+| `openAiApiKey` | `string` | ❌ | OpenAI API key |
+| `openAiModel` | `string` | ❌ | OpenAI model name (default: 'gpt-4.1-mini') |
+| `openAiBaseUrl` | `string` | ❌ | OpenAI base URL (default: 'https://api.openai.com/v1') |
+
+##### Returns (UseAIEngineReturn)
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `backend` | `'openai' \| 'webllm'` | Current AI backend |
-| `isReady` | `boolean` | True when engine is initialized |
-| `initialize` | `(backend) => Promise<void>` | Initialize AI engine |
-| `cleanup` | `() => Promise<void>` | Cleanup AI resources |
+| `client` | `JsonChatClient \| null` | The OpenAI client instance |
+| `state` | `TranslationState` | Current engine state |
+| `loadedModelId` | `string \| null` | Currently loaded model ID |
+| `isReady` | `boolean` | True when engine is ready for inference |
+| `error` | `string \| null` | Error message if state is 'error' |
+| `runWithLock` | `<T>(task: () => Promise<T>) => Promise<T>` | Run task with exclusive access |
+| `stop` | `() => void` | Stop any ongoing AI operation |
+
+##### TranslationState
+
+```typescript
+type TranslationState = 'disabled' | 'initializing' | 'ready' | 'translating' | 'error';
+```
 
 ---
 
 #### useAITranslation
 
-Hook for AI-powered translation of checkpoints.
+Hook for translating DQM analysis results using AI. **Note:** Translation runs automatically when enabled - there is no manual `translate()` function.
 
 ```typescript
 import { useAITranslation } from '@crownpeak/dqm-react-component';
+import type { UseAITranslationOptions, UseAITranslationReturn } from '@crownpeak/dqm-react-component';
 
 function MyComponent() {
-    const {
-        translate,                  // (checkpoints, targetLang, mode) => Promise<Checkpoint[]>
-        isTranslating,              // boolean
-        progress,                   // TranslationProgress
-        error,                      // Error | null
-        cancelTranslation,          // () => void
-    } = useAITranslation();
+    const engine = useAIEngine({ enabled: true, openAiApiKey: '...' });
+    const cacheManager = useTranslationCache();
+    
+    const translation = useAITranslation({
+        engine,
+        cacheManager,
+        originalData: analysisData,
+        targetLang: 'de',
+        modelId: 'gpt-4.1-mini',
+        enabled: true,
+        mode: 'fast',
+        computeBudgetMs: 15000,
+        persistentCache: cacheManager.cache,
+    });
+    
+    // Use translation.translatedData instead of originalData
 }
 ```
 
-##### Returns
+##### Options (UseAITranslationOptions)
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `engine` | `UseAIEngineReturn` | ✅ | AI engine hook return value |
+| `cacheManager` | `UseTranslationCacheReturn` | ✅ | Translation cache hook return value |
+| `originalData` | `AnalysisData \| null` | ✅ | Original analysis data |
+| `targetLang` | `string` | ✅ | Target language code (e.g., 'de', 'fr') |
+| `modelId` | `string` | ✅ | Model ID being used |
+| `enabled` | `boolean` | ✅ | Whether translation is enabled |
+| `mode` | `TranslationMode` | ✅ | Translation mode ('fast' or 'full') |
+| `computeBudgetMs` | `number` | ✅ | Compute budget in milliseconds |
+| `persistentCache` | `TranslationCache` | ✅ | IndexedDB translation cache |
+| `summaryGenerating` | `boolean` | ❌ | Whether summary is generating (translation waits) |
+
+##### Returns (UseAITranslationReturn)
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `translate` | `(checkpoints, targetLang, mode) => Promise<Checkpoint[]>` | Translate checkpoints |
-| `isTranslating` | `boolean` | True during translation |
-| `progress` | `TranslationProgress` | Translation progress state |
-| `error` | `Error \| null` | Translation error |
-| `cancelTranslation` | `() => void` | Cancel in-progress translation |
+| `translatedData` | `AnalysisData \| null` | Translated data (or original if not translated) |
+| `progress` | `TranslationProgress \| null` | Translation progress |
+| `error` | `string \| null` | Error message |
+| `translatingIds` | `Set<string>` | Checkpoint IDs currently being translated |
+| `translatedIds` | `Set<string>` | Checkpoint IDs that have been translated |
+| `isTranslating` | `boolean` | Whether translation is in progress |
+| `restart` | `() => void` | Restart translation (clears cache for current asset) |
+| `stop` | `() => void` | Stop ongoing translation |
+| `retrySingleCheckpoint` | `(checkpointId: string) => Promise<void>` | Retry single checkpoint |
+| `resetToOriginal` | `() => void` | Reset to original data |
 
 ##### TranslationProgress
 
 ```typescript
 interface TranslationProgress {
-    isTranslating: boolean;
-    progress: number;           // 0-100
     translated: number;         // Number of checkpoints translated
-    total: number;              // Total checkpoints
-    mode: 'fast' | 'full';
-    backend: 'openai' | 'webllm';
+    total: number;              // Total checkpoints to translate
+    tokens: number;             // Tokens used
+    fromCache: number;          // Checkpoints retrieved from cache
+    errors: number;             // Number of errors
 }
 ```
 
-##### Example
+##### TranslationMode
 
 ```typescript
-const { translate, isTranslating, progress } = useAITranslation();
-
-const handleTranslate = async () => {
-    const translated = await translate(checkpoints, 'de', 'fast');
-    console.log('Translated:', translated);
-};
-
-// Show progress
-{isTranslating && (
-    <div>
-        Translating: {progress.translated}/{progress.total} ({progress.progress}%)
-    </div>
-)}
+type TranslationMode = 'fast' | 'full';
 ```
+
+- `fast` - Budget-limited translation (stops after `computeBudgetMs`)
+- `full` - Translate all checkpoints (120s budget)
 
 ---
 
 #### useAISummary
 
-Hook for AI-powered summary generation.
+Hook for generating AI-powered summary of DQM results. **Note:** Summary generation runs automatically when enabled - there is no manual `generateSummary()` function.
 
 ```typescript
 import { useAISummary } from '@crownpeak/dqm-react-component';
+import type { UseAISummaryOptions, UseAISummaryReturn } from '@crownpeak/dqm-react-component';
 
 function MyComponent() {
-    const {
-        generateSummary,            // (checkpoints) => Promise<string>
-        isGenerating,               // boolean
-        stats,                      // SummaryStats
-        error,                      // Error | null
-    } = useAISummary();
+    const engine = useAIEngine({ enabled: true, openAiApiKey: '...' });
+    const cacheManager = useTranslationCache();
+    
+    const summary = useAISummary({
+        engine,
+        originalData: analysisData,
+        targetLang: 'de',
+        modelId: 'gpt-4.1-mini',
+        enabled: true,
+        cache: cacheManager.cache,
+    });
+    
+    // Use summary.bullets for the generated summary points
 }
 ```
 
-##### Returns
+##### Options (UseAISummaryOptions)
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `engine` | `UseAIEngineReturn` | ✅ | AI engine hook return value |
+| `originalData` | `AnalysisData \| null` | ✅ | Original analysis data |
+| `targetLang` | `string` | ✅ | Target language for summary |
+| `modelId` | `string` | ✅ | Model ID being used |
+| `enabled` | `boolean` | ✅ | Whether summary is enabled |
+| `cache` | `TranslationCache` | ✅ | Translation cache for summary caching |
+| `timeoutMs` | `number` | ❌ | Timeout in milliseconds (default: 45000) |
+| `translationInProgress` | `boolean` | ❌ | Whether translation is in progress (summary waits) |
+
+##### Returns (UseAISummaryReturn)
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `generateSummary` | `(checkpoints) => Promise<string>` | Generate summary |
-| `isGenerating` | `boolean` | True during summary generation |
-| `stats` | `SummaryStats` | Summary generation stats |
-| `error` | `Error \| null` | Summary generation error |
+| `state` | `SummaryState` | Current summary state |
+| `bullets` | `string[] \| null` | Generated bullet points |
+| `error` | `string \| null` | Error message |
+| `stats` | `SummaryStats \| null` | Stats for last summary run |
+| `restart` | `() => void` | Restart summary generation |
+
+##### SummaryState
+
+```typescript
+type SummaryState = 'idle' | 'generating' | 'ready' | 'error';
+```
 
 ##### SummaryStats
 
 ```typescript
 interface SummaryStats {
-    isGenerating: boolean;
-    summaryText?: string;
-    chunkingStrategy: 'single' | 'chunk' | 'tiny';
-    tokensUsed?: number;
-    estimatedCost?: number;     // USD
+    durationMs: number;
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    model: string;
+    cached: boolean;
 }
-```
-
-##### Example
-
-```typescript
-const { generateSummary, isGenerating, stats } = useAISummary();
-
-const handleGenerateSummary = async () => {
-    const summary = await generateSummary(checkpoints);
-    console.log('Summary:', summary);
-};
-
-// Show summary
-{stats.summaryText && (
-    <div>
-        <h3>AI Summary</h3>
-        <ul>
-            {stats.summaryText.split('\n').map((line, i) => (
-                <li key={i}>{line}</li>
-            ))}
-        </ul>
-        <small>Tokens: {stats.tokensUsed}, Cost: ${stats.estimatedCost}</small>
-    </div>
-)}
 ```
 
 ---
 
-### Core Hooks
+#### useTranslationCache
 
-#### useAnalysis
-
-Hook for DQM analysis state management.
+Hook for managing translation cache (IndexedDB + in-memory).
 
 ```typescript
-import { useAnalysis } from '@crownpeak/dqm-react-component';
+import { useTranslationCache } from '@crownpeak/dqm-react-component';
+import type { UseTranslationCacheReturn } from '@crownpeak/dqm-react-component';
 
 function MyComponent() {
-    const {
-        analysisState,              // 'idle' | 'analyzing' | 'completed' | 'error'
-        analysisData,               // AnalysisData | null
-        assetId,                    // string | null
-        startAnalysis,              // (html: string) => Promise<void>
-        resetAnalysis,              // () => void
-    } = useAnalysis();
+    const cacheManager = useTranslationCache();
+    
+    // Clear all caches
+    await cacheManager.clearAll();
 }
 ```
 
-##### Returns
+##### Returns (UseTranslationCacheReturn)
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `analysisState` | `AnalysisState` | Current analysis state |
-| `analysisData` | `AnalysisData \| null` | Analysis results |
-| `assetId` | `string \| null` | DQM asset ID |
-| `startAnalysis` | `(html) => Promise<void>` | Start new analysis |
-| `resetAnalysis` | `() => void` | Reset analysis state |
+| `cache` | `TranslationCache` | IndexedDB-backed translation cache |
+| `assetCache` | `Map<string, AnalysisData>` | In-memory cache per asset |
+| `storagePersisted` | `boolean \| null` | Whether storage survives browser eviction |
+| `refreshStorageState` | `() => Promise<void>` | Refresh persistence state |
+| `clearAll` | `() => Promise<void>` | Clear all cached translations |
+| `clearAssetCache` | `() => void` | Clear in-memory cache only |
 
 ---
 
-#### useAuthentication
+### AI Context
 
-Hook for authentication state management.
+#### AIProvider
+
+Provider component for AI features configuration. Wrap your app with this to use AI hooks.
 
 ```typescript
-import { useAuthentication } from '@crownpeak/dqm-react-component';
+import { AIProvider } from '@crownpeak/dqm-react-component';
+import type { AIProviderProps } from '@crownpeak/dqm-react-component';
 
-function MyComponent() {
-    const {
-        isAuthenticated,            // boolean
-        sessionType,                // 'direct' | 'backend'
-        login,                      // (apiKey, websiteId) => Promise<void>
-        logout,                     // () => Promise<void>
-    } = useAuthentication();
+function App() {
+    return (
+        <AIProvider
+            translationConfig={{ enabledByDefault: false, computeBudgetMs: 15000 }}
+            summaryConfig={{ timeoutMs: 45000 }}
+        >
+            <MyApp />
+        </AIProvider>
+    );
 }
 ```
 
-##### Returns
+##### Props (AIProviderProps)
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `isAuthenticated` | `boolean` | True when authenticated |
-| `sessionType` | `'direct' \| 'backend'` | Current session type |
-| `login` | `(apiKey, websiteId) => Promise<void>` | Login with credentials |
-| `logout` | `() => Promise<void>` | Logout and clear session |
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `children` | `React.ReactNode` | ✅ | Child components |
+| `translationConfig` | `TranslationConfig` | ❌ | Translation configuration |
+| `summaryConfig` | `SummaryConfig` | ❌ | Summary configuration |
 
 ---
 
-#### useHighlights
+#### useAI
 
-Hook for error highlight navigation.
+Hook to access AI context settings. Must be used within an AIProvider.
 
 ```typescript
-import { useHighlights } from '@crownpeak/dqm-react-component';
+import { useAI } from '@crownpeak/dqm-react-component';
+import type { AIContextValue } from '@crownpeak/dqm-react-component';
 
 function MyComponent() {
-    const {
-        currentHighlight,           // number | null
-        visibleHighlight,           // number | null
-        totalHighlights,            // number
-        navigateToHighlight,        // (index: number) => void
-        nextHighlight,              // () => void
-        previousHighlight,          // () => void
-    } = useHighlights();
+    const ai = useAI();
+    
+    // Toggle translation
+    ai.setTranslationEnabled(!ai.translationEnabled);
+    
+    // Change translation mode
+    ai.setTranslationMode('full');
+    
+    // Update OpenAI settings
+    ai.setOpenAiApiKey('sk-...');
+    ai.setOpenAiModel('gpt-4o-mini');
 }
 ```
 
-##### Returns
+##### Returns (AIContextValue)
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `currentHighlight` | `number \| null` | Current highlight index (user-navigated) |
-| `visibleHighlight` | `number \| null` | Visible highlight index (scroll-detected) |
-| `totalHighlights` | `number` | Total number of highlights |
-| `navigateToHighlight` | `(index) => void` | Navigate to specific highlight |
-| `nextHighlight` | `() => void` | Navigate to next highlight |
-| `previousHighlight` | `() => void` | Navigate to previous highlight |
+| `translationEnabled` | `boolean` | Translation feature enabled |
+| `setTranslationEnabled` | `(value: boolean) => void` | Toggle translation |
+| `translationMode` | `TranslationMode` | Current translation mode |
+| `setTranslationMode` | `(value: TranslationMode) => void` | Set translation mode |
+| `translationDialogOpen` | `boolean` | Translation dialog visibility |
+| `setTranslationDialogOpen` | `(value: boolean) => void` | Toggle dialog |
+| `summaryEnabled` | `boolean` | Summary feature enabled |
+| `setSummaryEnabled` | `(value: boolean) => void` | Toggle summary |
+| `openAiApiKey` | `string` | Current OpenAI API key |
+| `setOpenAiApiKey` | `(value: string) => void` | Set API key |
+| `openAiModel` | `string` | Current OpenAI model |
+| `setOpenAiModel` | `(value: string) => void` | Set model |
+| `openAiBaseUrl` | `string` | Current OpenAI base URL |
+| `setOpenAiBaseUrl` | `(value: string) => void` | Set base URL |
+| `targetLang` | `string` | Target language (from i18n) |
+| `translationNeeded` | `boolean` | True if target !== 'en' |
+| `aiEnabled` | `boolean` | Any AI feature enabled |
+| `computeBudgetMs` | `number` | Current compute budget |
+| `effectiveModelId` | `string` | Resolved model ID |
 
 ---
 
@@ -732,55 +751,91 @@ interface AnalysisData {
 
 ## Redux Store
 
+> **Note:** The Redux store is used internally by the DQM component. These types are documented for advanced users who need to integrate with the store directly. Most users should use the provided hooks instead.
+
 ### Store Structure
 
 ```typescript
 interface RootState {
-    auth: AuthState;
-    ai: AIState;
-    highlight: HighlightState;
     locale: LocaleState;
+    analysis: AnalysisSliceState;
+    highlight: HighlightSliceState;
+    auth: AuthSliceState;
+    ai: AISliceState;
+    dqmApi: RTKQueryState;  // RTK Query cache
 }
 ```
 
-### AuthState
+### AnalysisSliceState
 
 ```typescript
-interface AuthState {
+interface AnalysisSliceState {
+    state: AnalysisState;           // 'idle' | 'analyzing' | 'completed' | 'error'
+    assetId: string | null;
+    data: AnalysisData | null;
+    error: string | null;
+    isAnalyzing: boolean;
+    startedAt: number | null;
+    completedAt: number | null;
+}
+```
+
+### AuthSliceState
+
+```typescript
+interface AuthSliceState {
+    apiKey: string | null;
+    websiteId: string | null;
     isAuthenticated: boolean;
-    sessionType: 'direct' | 'backend';
-    apiKey?: string;
-    websiteId?: string;
-    sessionToken?: string;
+    sessionType: 'direct' | 'backend' | null;
+    sessionToken: string | null;
+    accessToken: string | null;
+    refreshToken: string | null;
+    rememberMe: boolean;
+    isLoading: boolean;
+    error: string | null;
+    storageWarningAcknowledged: boolean;
 }
 ```
 
-### AIState
+### HighlightSliceState
 
 ```typescript
-interface AIState {
-    backend: 'openai' | 'webllm';
-    isReady: boolean;
-    translation: {
-        isTranslating: boolean;
-        progress: TranslationProgress;
-        error: Error | null;
-    };
-    summary: {
-        isGenerating: boolean;
-        stats: SummaryStats;
-        error: Error | null;
-    };
-}
-```
-
-### HighlightState
-
-```typescript
-interface HighlightState {
-    currentHighlight: number | null;
-    visibleHighlight: number | null;
+interface HighlightSliceState {
+    selectedCheckpoint: Checkpoint | null;
+    selectedCheckpointId: string | null;
+    viewMode: 'browser' | 'source';
+    showAllHighlights: boolean;
+    currentHighlightIndex: number;    // 1-based
     totalHighlights: number;
+    visibleHighlightIndex: number;    // 1-based
+    cache: Record<string, HighlightCacheEntry>;
+    scrollPositions: Record<string, { browser: number; source: number }>;
+    isModalOpen: boolean;
+    isLoading: boolean;
+    error: string | null;
+    highlightedContent: string;
+    scriptsDisabled: boolean;
+    hasAutoScrolled: boolean;
+}
+```
+
+### AISliceState
+
+```typescript
+interface AISliceState {
+    settings: {
+        provider: 'openai' | 'none';
+        openaiApiKey: string | null;
+        openaiModel: string;
+        enabled: boolean;
+        translationProvider: 'openai' | 'none';
+    };
+    summaries: Record<string, AISummary>;
+    isSettingsOpen: boolean;
+    isGenerating: boolean;
+    generatingFor: string | null;
+    error: string | null;
 }
 ```
 
@@ -796,38 +851,69 @@ interface LocaleState {
 
 ## Utilities
 
-### logger
+### i18n
 
-Centralized logging utility with debug mode.
+The library exports its i18next instance and locale utilities for language management.
 
 ```typescript
-import { logger } from '@crownpeak/dqm-react-component';
-
-// Enable debug mode
-logger.setDebugMode(true);
-
-// Log messages
-logger.debug('Debug message');
-logger.warn('Warning message');
-logger.error('Error message');
+import { 
+  i18n,
+  resolveLanguage,
+  SUPPORTED_LOCALES,
+  DEFAULT_LOCALE,
+  normalizeLocale,
+} from '@crownpeak/dqm-react-component';
+import type { SupportedLocale, AvailableLanguage } from '@crownpeak/dqm-react-component';
 ```
 
-#### Methods
+#### Exports
 
-| Method | Description |
-|--------|-------------|
-| `setDebugMode(enabled: boolean)` | Enable/disable debug logging |
-| `debug(...args: any[])` | Log debug message (only in debug mode) |
-| `warn(...args: any[])` | Log warning message (always shown) |
-| `error(...args: any[])` | Log error message (always shown) |
+| Export | Type | Description |
+|--------|------|-------------|
+| `i18n` | `i18n` | i18next instance used by the library |
+| `resolveLanguage` | `(locale: string) => AvailableLanguage` | Resolve locale to available language (handles regional variants) |
+| `SUPPORTED_LOCALES` | `readonly ['en', 'de', 'es']` | Array of supported locale codes |
+| `DEFAULT_LOCALE` | `'en'` | Default fallback locale |
+| `normalizeLocale` | `(input: string) => SupportedLocale \| null` | Normalize locale string to supported locale |
 
-#### localStorage Control
+#### Changing Language
 
 ```typescript
-// Enable debug mode via localStorage
-localStorage.setItem('dqm_debug', 'true');
+import { i18n } from '@crownpeak/dqm-react-component';
 
-// Reload page to activate
+// Change language programmatically
+i18n.changeLanguage('de');
+
+// Get current language
+const currentLang = i18n.language; // 'de'
+
+// Listen for language changes
+i18n.on('languageChanged', (lng) => {
+  console.log('Language changed to:', lng);
+});
+```
+
+#### Handling Regional Variants
+
+```typescript
+import { resolveLanguage } from '@crownpeak/dqm-react-component';
+
+resolveLanguage('de-AT');  // Returns 'de'
+resolveLanguage('es-MX');  // Returns 'es'
+resolveLanguage('fr');     // Returns 'en' (fallback)
+```
+
+#### Validating Locales
+
+```typescript
+import { normalizeLocale, SUPPORTED_LOCALES } from '@crownpeak/dqm-react-component';
+
+normalizeLocale('de');      // 'de'
+normalizeLocale('de-AT');   // 'de'
+normalizeLocale('fr');      // null (not supported)
+
+// Check if locale is supported
+const isSupported = SUPPORTED_LOCALES.includes('de'); // true
 ```
 
 ---
@@ -878,6 +964,52 @@ interface DQMWidget {
         }
     });
 </script>
+```
+
+---
+
+## localStorage Keys
+
+The DQM component uses localStorage for persisting user preferences and authentication state.
+
+### Authentication Keys
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `dqm_apiKey` | `string` | DQM API key (direct auth mode) |
+| `dqm_websiteID` | `string` | DQM Website ID |
+| `dqm_sessionToken` | `string` | Backend session token (backend auth mode) |
+| `dqm_sessionType` | `'direct' \| 'backend'` | Current authentication mode |
+| `dqm_rememberMe` | `'true' \| 'false'` | Remember credentials preference |
+| `dqm_storageWarningAcknowledged` | `'true'` | User acknowledged localStorage security warning |
+
+### AI Feature Keys
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `dqm_openai_apiKey` | `string` | OpenAI API key for translation/summary |
+| `dqm_openai_model` | `string` | OpenAI model (default: 'gpt-4.1-mini') |
+| `dqm_target_language` | `string` | Target language for translation (ISO 639-1) |
+| `dqm_translate_results_enabled` | `'true' \| 'false'` | Translation feature enabled |
+| `dqm_ai_summary_enabled` | `'true' \| 'false'` | AI summary feature enabled |
+| `dqm_ai_provider` | `'openai' \| 'none'` | AI provider selection |
+
+### UI State Keys
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `dqm_locale` | `'en' \| 'de' \| 'es'` | UI language |
+| `dqm_debug` | `'true' \| 'false'` | Debug logging enabled |
+| `dqm_quality_breakdown_expanded` | `'true' \| 'false'` | Quality breakdown accordion state |
+
+#### Example: Pre-configure AI settings
+
+```typescript
+// Set OpenAI configuration before loading DQM
+localStorage.setItem('dqm_openai_apiKey', 'sk-...');
+localStorage.setItem('dqm_openai_model', 'gpt-4o-mini');
+localStorage.setItem('dqm_target_language', 'de');
+localStorage.setItem('dqm_translate_results_enabled', 'true');
 ```
 
 ---

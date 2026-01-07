@@ -1,0 +1,20 @@
+{
+  "includeDir": "../",
+  "toolName": "search_dqm_docs",
+  "toolDescription": "Search the Crownpeak DQM React Component documentation. Use this to find information about DQMSidebar props, configuration options, overlay detection, backend authentication, widget bundle integration, and troubleshooting.",
+  "ignorePatterns": [
+    "node_modules",
+    ".git",
+    "dist",
+    "coverage",
+    "*.log",
+    "*.lock",
+    "*.tgz",
+    "dump.rdb",
+    "mcp-server",
+    "server-ui/dist",
+    "test",
+    "e2e",
+    "html-pages"
+  ]
+}

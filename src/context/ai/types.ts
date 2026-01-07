@@ -3,7 +3,7 @@
  */
 
 import type { AnalysisData } from '../../types';
-import type { TranslationProgress, WebLLMInitProgress, SummaryStats } from '../../utils/webllmTranslation';
+import type { TranslationProgress, SummaryStats } from '../../utils/translationUtils';
 import type { JsonChatClient } from '../../utils/aiJsonClient';
 import type { TranslationCache } from '../../utils/translationCache';
 
@@ -11,8 +11,7 @@ import type { TranslationCache } from '../../utils/translationCache';
 // AI Backend & Model Types
 // ============================================================================
 
-export type AiBackend = 'local' | 'openai';
-export type AiModelPreset = 'fast' | 'simple' | 'reliable' | 'accurate';
+export type AiBackend = 'openai';
 export type TranslationMode = 'fast' | 'full';
 export type TranslationState = 'disabled' | 'initializing' | 'ready' | 'translating' | 'error';
 export type SummaryState = 'idle' | 'generating' | 'ready' | 'error';
@@ -41,33 +40,23 @@ export interface UseTranslationCacheReturn {
 // ============================================================================
 
 export interface UseAIEngineOptions {
-  /** Which backend to use */
-  backend: AiBackend;
   /** Whether AI features are enabled */
   enabled: boolean;
-  /** Desired model ID for local WebLLM backend */
-  modelId: string;
-  /** Whether to use IndexedDB for model caching */
-  useIndexedDBCache?: boolean;
-  /** OpenAI API key (required for openai backend) */
+  /** OpenAI API key (required) */
   openAiApiKey?: string;
   /** OpenAI model name */
   openAiModel?: string;
   /** OpenAI base URL */
   openAiBaseUrl?: string;
-  /** Callback when storage persistence state changes */
-  onStorageStateChange?: () => void;
 }
 
 export interface UseAIEngineReturn {
-  /** The AI client (WebLLM or OpenAI) */
+  /** The AI client (OpenAI) */
   client: JsonChatClient | null;
   /** Current engine state */
   state: TranslationState;
   /** Currently loaded model ID */
   loadedModelId: string | null;
-  /** Model initialization progress (download, etc.) */
-  initProgress: WebLLMInitProgress | null;
   /** Whether the engine is ready for inference */
   isReady: boolean;
   /** Error message if state is 'error' */
@@ -93,8 +82,6 @@ export interface UseAITranslationOptions {
   targetLang: string;
   /** Model ID being used */
   modelId: string;
-  /** Backend type */
-  backend: AiBackend;
   /** Whether translation is enabled */
   enabled: boolean;
   /** Translation mode (fast = budget limited, full = complete) */
@@ -168,7 +155,7 @@ export interface UseAISummaryReturn {
   restart: () => void;
 }
 
-export type { SummaryStats } from '../../utils/webllmTranslation';
+export type { SummaryStats } from '../../utils/translationUtils';
 
 // ============================================================================
 // AI Context Types
@@ -183,17 +170,11 @@ export interface AIContextValue {
   translationDialogOpen: boolean;
   setTranslationDialogOpen: (value: boolean) => void;
 
-  // Model Settings
-  aiModelPreset: AiModelPreset;
-  setAiModelPreset: (value: AiModelPreset) => void;
-
   // Summary Settings
   summaryEnabled: boolean;
   setSummaryEnabled: (value: boolean) => void;
 
-  // Backend Settings
-  aiBackend: AiBackend;
-  setAiBackend: (value: AiBackend) => void;
+  // OpenAI Settings
   openAiApiKey: string;
   setOpenAiApiKey: (value: string) => void;
   openAiModel: string;
@@ -205,19 +186,13 @@ export interface AIContextValue {
   targetLang: string;
   translationNeeded: boolean;
   aiEnabled: boolean;
-  desiredModelId: string;
   computeBudgetMs: number;
   effectiveModelId: string;
-
-  // Model Presets
-  presetToModelId: Record<AiModelPreset, string>;
 
   // Config (from props)
   translationConfig?: {
     enabledByDefault?: boolean;
-    modelId?: string;
     computeBudgetMs?: number;
-    useIndexedDBCache?: boolean;
   };
   summaryConfig?: {
     timeoutMs?: number;

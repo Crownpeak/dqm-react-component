@@ -7,6 +7,7 @@ import {
   type ResolvedLocale,
   type SupportedLocale,
 } from '../locale';
+import i18n from '../i18n';
 
 export interface LocaleState extends ResolvedLocale {}
 
@@ -18,6 +19,11 @@ const detectInitial = (): ResolvedLocale => {
 };
 
 const initialState: LocaleState = detectInitial();
+
+// Sync i18n with initial state
+if (typeof window !== 'undefined' && i18n.language !== initialState.locale) {
+  i18n.changeLanguage(initialState.locale);
+}
 
 const localeSlice = createSlice({
   name: 'locale',
@@ -33,12 +39,20 @@ const localeSlice = createSlice({
       } else if (next.source !== 'user') {
         persistLocale(null);
       }
+      // Sync i18n language
+      if (i18n.language !== next.locale) {
+        i18n.changeLanguage(next.locale);
+      }
     },
     setUserLocale: (state, action: PayloadAction<SupportedLocale>) => {
       state.locale = action.payload;
       state.source = 'user';
       state.userOverride = true;
       persistLocale(action.payload);
+      // Sync i18n language
+      if (i18n.language !== action.payload) {
+        i18n.changeLanguage(action.payload);
+      }
     },
     applyNavigatorLocale: (state) => {
       if (typeof window === 'undefined') return;
@@ -52,6 +66,10 @@ const localeSlice = createSlice({
       } else {
         persistLocale(null);
       }
+      // Sync i18n language
+      if (i18n.language !== next.locale) {
+        i18n.changeLanguage(next.locale);
+      }
     },
     resetLocale: (state) => {
       if (typeof window === 'undefined') return;
@@ -60,6 +78,10 @@ const localeSlice = createSlice({
       state.locale = next.locale;
       state.source = next.source;
       state.userOverride = next.userOverride;
+      // Sync i18n language
+      if (i18n.language !== next.locale) {
+        i18n.changeLanguage(next.locale);
+      }
     },
   },
 });

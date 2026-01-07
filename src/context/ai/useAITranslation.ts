@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 import {
   translateDqmResults,
   type TranslationProgress,
-} from '../../utils/webllmTranslation';
+} from '../../utils/translationUtils';
 import { computeCheckpointSourceHash, makeCheckpointKey } from '../../utils/translationCache';
 import type { AnalysisData } from '../../types';
 import type { UseAITranslationOptions, UseAITranslationReturn } from './types';
@@ -32,7 +32,6 @@ export const useAITranslation = (options: UseAITranslationOptions): UseAITransla
     originalData,
     targetLang,
     modelId,
-    backend,
     enabled,
     mode,
     computeBudgetMs,
@@ -64,7 +63,6 @@ export const useAITranslation = (options: UseAITranslationOptions): UseAITransla
   const originalDataRef = useRef(originalData);
   const targetLangRef = useRef(targetLang);
   const modelIdRef = useRef(modelId);
-  const backendRef = useRef(backend);
   const enabledRef = useRef(enabled);
   const modeRef = useRef(mode);
   const computeBudgetMsRef = useRef(computeBudgetMs);
@@ -79,7 +77,6 @@ export const useAITranslation = (options: UseAITranslationOptions): UseAITransla
     originalDataRef.current = originalData;
     targetLangRef.current = targetLang;
     modelIdRef.current = modelId;
-    backendRef.current = backend;
     enabledRef.current = enabled;
     modeRef.current = mode;
     computeBudgetMsRef.current = computeBudgetMs;
@@ -116,7 +113,7 @@ export const useAITranslation = (options: UseAITranslationOptions): UseAITransla
   const makeCacheKey = useCallback(() => {
     const data = originalDataRef.current;
     if (!data) return '';
-    return `${data.assetId}:${targetLangRef.current}:${backendRef.current}:${modelIdRef.current}`;
+    return `${data.assetId}:${targetLangRef.current}:${modelIdRef.current}`;
   }, []);
 
   /**
@@ -187,7 +184,7 @@ export const useAITranslation = (options: UseAITranslationOptions): UseAITransla
    * Main translation effect - RUNS ONCE per unique key.
    */
   useEffect(() => {
-    const runKey = `${assetId}:${targetLang}:${modelId}:${backend}:${mode}`;
+    const runKey = `${assetId}:${targetLang}:${modelId}:${mode}`;
 
     // Skip if not enabled
     if (!enabled) {
@@ -236,10 +233,6 @@ export const useAITranslation = (options: UseAITranslationOptions): UseAITransla
         isPartial: false,
       });
       setTranslatedData(cached);
-      if (backendRef.current === 'local') {
-        setTranslatedIds(new Set(cached.checkpoints.filter((cp) => cp.failed).map((cp) => cp.id)));
-        setTranslatingIds(new Set());
-      }
       hasRunForKeyRef.current = runKey;
       return;
     }
@@ -261,42 +254,24 @@ export const useAITranslation = (options: UseAITranslationOptions): UseAITransla
 
     const client = engineRef.current.client!;
     const runWithLock = engineRef.current.runWithLock;
-    const currentBackend = backendRef.current;
 
     runWithLock(async () => translateDqmResults({
       client,
       data,
       targetLanguage: targetLangRef.current,
       modelId: modelIdRef.current,
-      maxConcurrentBatches: currentBackend === 'openai' ? 3 : 1,
-      maxItemsPerBatch: currentBackend === 'openai' ? 12 : undefined,
-      forceSerial: currentBackend === 'local',
+      maxConcurrentBatches: 3,
+      maxItemsPerBatch: 12,
+      forceSerial: false,
       cache: persistentCacheRef.current,
       computeBudgetMs: computeBudgetMsRef.current,
       signal: controller.signal,
       onProgress: (prog) => setProgress(prog),
-      onBatchStatus: ({ ids, status }) => {
-        if (currentBackend !== 'local') return;
-        setTranslatingIds((prev) => {
-          const next = new Set(prev);
-          if (status === 'translating') {
-            ids.forEach((id) => next.add(id));
-          } else {
-            ids.forEach((id) => next.delete(id));
-          }
-          return next;
-        });
-        if (status === 'done') {
-          setTranslatedIds((prev) => {
-            const next = new Set(prev);
-            ids.forEach((id) => next.add(id));
-            return next;
-          });
-        }
+      onBatchStatus: () => {
+        // Batch status tracking not needed for API backend
       },
-      onPartialResult: (partial) => {
-        if (currentBackend !== 'local') return;
-        setTranslatedData(partial);
+      onPartialResult: () => {
+        // Partial results not needed for API backend
       },
     }))
       .then(({ data: translated, progress: finalProgress }) => {
@@ -311,13 +286,8 @@ export const useAITranslation = (options: UseAITranslationOptions): UseAITransla
               : tRef.current('translation_partial'),
           );
         }
-        if (currentBackend === 'local') {
-          setTranslatingIds(new Set());
-          setTranslatedIds(new Set(data.checkpoints.filter((cp) => cp.failed).map((cp) => cp.id)));
-        } else {
-          setTranslatingIds(new Set());
-          setTranslatedIds(new Set());
-        }
+        setTranslatingIds(new Set());
+        setTranslatedIds(new Set());
       })
       .catch((err) => {
         if (controller.signal.aborted) return;
@@ -334,7 +304,7 @@ export const useAITranslation = (options: UseAITranslationOptions): UseAITransla
     return () => {
       controller.abort();
     };
-  }, [assetId, targetLang, modelId, backend, mode, enabled, translationNeeded, runNonce, makeCacheKey, stop]);
+  }, [assetId, targetLang, modelId, mode, enabled, translationNeeded, runNonce, makeCacheKey, stop]);
 
   return {
     translatedData,

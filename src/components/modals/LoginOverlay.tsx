@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { Box, IconButton, Typography } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import type { DQMConfig, SessionType } from '../../types';
-import { DQMLogin, OAuth2CallbackHandler } from '../auth';
+import { DQMLogin } from '../auth';
 
 export interface LoginOverlayProps {
   /** Configuration object */
@@ -49,15 +49,6 @@ export const LoginOverlay: React.FC<LoginOverlayProps> = ({
         overflow: 'auto',
       }}
     >
-      {/* OAuth2 Callback Handler */}
-      {config?.oauth2Config && (
-        <OAuth2CallbackHandler
-          config={config}
-          onAuthSuccess={onAuthSuccess}
-          onAuthError={onAuthError}
-        />
-      )}
-
       {/* Header with Logo */}
       <Box
         sx={{

@@ -974,15 +974,6 @@ const TestApp: React.FC = () => {
                     // -- Auth Backend for API Key management
                     authBackendUrl: window.location.origin,
                     useLocalStorage: true,
-
-                    // -- Oauth2:  backend not yet implemented ...
-                    // oauth2Config: {
-                    //     authUrl: 'https://dqm.crownpeak.com/oauth2/authorize',
-                    //     clientId: 'crownpeak-dqm-react-component',
-                    //     scope: 'dqm_api',
-                    //     redirectUri: 'http://localhost:5173/',
-                    //     tokenUrl: 'https://dqm.crownpeak.com/oauth2/token',
-                    // }
                 }}
             />
         </>

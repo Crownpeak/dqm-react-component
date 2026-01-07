@@ -1,36 +1,34 @@
-# Redis Setup für Production-Ready Sessions
-
 ## Problem
 
-Das Backend verwendet standardmäßig **In-Memory Sessions**. Diese gehen bei jedem Server-Restart verloren, was bedeutet:
-- User müssen sich nach jedem Deployment neu einloggen
-- Development mit Hot-Reload führt zu häufigen Session-Verlusten
-- Load-Balancing über mehrere Server funktioniert nicht
+The backend uses **In-Memory Sessions** by default. These are lost on every server restart, which means:
+- Users must log in again after every deployment
+- Development with hot-reload causes frequent session losses
+- Load-balancing across multiple servers doesn't work
 
-## Lösung: Redis
+## Solution: Redis
 
-Redis speichert Sessions persistent und server-übergreifend. Sessions überleben:
-- ✅ Server-Restarts
+Redis stores sessions persistently and across servers. Sessions survive:
+- ✅ Server restarts
 - ✅ Deployments
-- ✅ Load-Balancing
-- ✅ Hot-Reload während Development
+- ✅ Load balancing
+- ✅ Hot-reload during development
 
 ## Quick Start
 
-### Lokale Entwicklung (Docker)
+### Local Development (Docker)
 
 ```bash
-# Redis starten
+# Start Redis
 docker run -d -p 6379:6379 redis:alpine
 
-# Umgebungsvariable setzen
+# Set environment variable
 export REDIS_URL=redis://localhost:6379
 
-# Server starten
+# Start server
 npm run dev:server
 ```
 
-### Lokale Entwicklung (ohne Docker)
+### Local Development (without Docker)
 
 ```bash
 # macOS
@@ -41,21 +39,21 @@ redis-server
 sudo apt-get install redis-server
 sudo systemctl start redis-server
 
-# Umgebungsvariable setzen
+# Set environment variable
 export REDIS_URL=redis://localhost:6379
 
-# Server starten
+# Start server
 npm run dev:server
 ```
 
 ### Production Deployment
 
-#### Option 1: Redis Cloud (Managed, Free Tier verfügbar)
+#### Option 1: Redis Cloud (Managed, Free Tier available)
 
-1. Erstelle Account auf [Redis Cloud](https://redis.com/try-free/)
-2. Erstelle neue Datenbank
-3. Kopiere Connection String
-4. Setze Environment Variable:
+1. Create an account on [Redis Cloud](https://redis.com/try-free/)
+2. Create a new database
+3. Copy the connection string
+4. Set environment variable:
 
 ```bash
 REDIS_URL=redis://default:password@redis-xxxxx.redislabs.com:xxxxx
@@ -76,27 +74,27 @@ REDIS_URL=redis://:password@your-cache.redis.cache.windows.net:6380?tls=true
 #### Option 4: Heroku Redis
 
 ```bash
-# Automatisch via REDIS_URL env var gesetzt
+# Automatically set via REDIS_URL env var
 heroku addons:create heroku-redis:mini
 ```
 
-## Fallback-Verhalten
+## Fallback Behavior
 
-Wenn **keine Redis-Verbindung** verfügbar ist:
-- ⚠️ Automatischer Fallback auf In-Memory Storage
-- ⚠️ Warning-Log: "Redis not available, using in-memory storage"
-- ⚠️ Sessions gehen bei Server-Restart verloren
+When **no Redis connection** is available:
+- ⚠️ Automatic fallback to in-memory storage
+- ⚠️ Warning log: "Redis not available, using in-memory storage"
+- ⚠️ Sessions are lost on server restart
 
 ## Monitoring
 
-Die Backend-Logs zeigen:
+The backend logs show:
 ```
 [SessionStore] ✅ Connected to Redis
 [SessionStore] Created Redis session: a285dde5... (expires in 1440 minutes)
 [Auth] Current sessions in store: 5 (storage: redis)
 ```
 
-## Konfiguration
+## Configuration
 
 ### Environment Variables
 
@@ -104,61 +102,61 @@ Die Backend-Logs zeigen:
 # .env
 REDIS_URL=redis://localhost:6379
 
-# Optionale Redis-Konfiguration
+# Optional Redis configuration
 REDIS_PASSWORD=your-password
-REDIS_TLS=true  # Für Production mit TLS
+REDIS_TLS=true  # For production with TLS
 ```
 
 ### Session TTL
 
-Sessions laufen nach 24 Stunden ab (konfigurierbar in `server/config.ts`):
+Sessions expire after 24 hours (configurable in `server/config.ts`):
 
 ```typescript
 session: {
-  ttl: 24 * 60 * 60 * 1000, // 24 Stunden in Millisekunden
+  ttl: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
 }
 ```
 
 ## Troubleshooting
 
 ### "Redis connection failed"
-- Prüfe ob Redis läuft: `redis-cli ping` → sollte "PONG" zurückgeben
-- Prüfe REDIS_URL Format
-- Prüfe Firewall/Security Groups
+- Check if Redis is running: `redis-cli ping` → should return "PONG"
+- Check REDIS_URL format
+- Check firewall/security groups
 
-### "Session expired" trotz Redis
-- TTL möglicherweise zu kurz → Erhöhe in `config.ts`
-- Redis Memory voll → Prüfe `redis-cli info memory`
+### "Session expired" despite Redis
+- TTL might be too short → Increase in `config.ts`
+- Redis memory full → Check `redis-cli info memory`
 
-### Sessions werden nicht gespeichert
-- Prüfe Backend-Logs: Sollte "Created Redis session" zeigen
-- Prüfe Redis: `redis-cli KEYS "session:*"`
+### Sessions are not being saved
+- Check backend logs: Should show "Created Redis session"
+- Check Redis: `redis-cli KEYS "session:*"`
 
 ## Best Practices
 
 ### Development
 ```bash
-# Lokaler Redis, keine Persistenz nötig
+# Local Redis, no persistence needed
 docker run -d -p 6379:6379 redis:alpine
 ```
 
 ### Staging/Production
 ```bash
-# Managed Redis mit Backups und Monitoring
+# Managed Redis with backups and monitoring
 # Redis Cloud, AWS ElastiCache, Azure Cache
 ```
 
 ### Security
-- ✅ Verwende TLS in Production (`rediss://` statt `redis://`)
-- ✅ Verwende starke Passwörter
-- ✅ Beschränke Network-Zugriff (Security Groups)
-- ✅ Aktiviere Redis AUTH
+- ✅ Use TLS in production (`rediss://` instead of `redis://`)
+- ✅ Use strong passwords
+- ✅ Restrict network access (security groups)
+- ✅ Enable Redis AUTH
 
-## Migration von In-Memory zu Redis
+## Migration from In-Memory to Redis
 
-Keine Code-Änderungen nötig! Einfach:
-1. REDIS_URL Environment Variable setzen
-2. Server neu starten
-3. Backend erkennt Redis automatisch
+No code changes required! Simply:
+1. Set REDIS_URL environment variable
+2. Restart server
+3. Backend automatically detects Redis
 
-Bestehende Sessions gehen bei der Migration verloren (User müssen sich neu einloggen).
+Existing sessions are lost during migration (users must log in again).

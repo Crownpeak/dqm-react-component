@@ -1,15 +1,11 @@
-# AI Features Guide
-
 The Crownpeak DQM React Component includes powerful AI-driven features to enhance the analysis experience through **automatic translation** and **intelligent summaries**.
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Features Comparison](#features-comparison)
 - [AI Translation](#ai-translation)
   - [Translation Flow](#translation-flow)
   - [OpenAI Backend](#openai-backend)
-  - [WebLLM Local Backend](#webllm-local-backend)
   - [Translation Modes](#translation-modes)
   - [Caching Strategy](#caching-strategy)
 - [AI Summary](#ai-summary)
@@ -17,7 +13,7 @@ The Crownpeak DQM React Component includes powerful AI-driven features to enhanc
   - [Chunking Strategy](#chunking-strategy)
 - [Configuration](#configuration)
 - [localStorage Keys](#localstorage-keys)
-- [Performance Comparison](#performance-comparison)
+- [Performance](#performance)
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -29,28 +25,15 @@ The AI features provide two main capabilities:
 1. **🌐 Translation**: Automatically translate DQM analysis results (checkpoints, categories, topics) into the user's preferred language
 2. **📝 Summary**: Generate AI-powered bullet-point summaries of the most critical quality issues
 
-Both features can run with **OpenAI** (cloud-based) or **WebLLM** (local, browser-based).
+Both features use **OpenAI** (cloud-based) for fast, high-quality results.
 
----
-
-## Features Comparison
-
-| Feature | OpenAI Backend | WebLLM Local Backend |
-|---------|----------------|----------------------|
-| **Translation** | ✅ Supported | ✅ Supported |
-| **Summary** | ✅ Supported | ❌ Not Supported (OpenAI only) |
-| **Speed** | ⚡ Fast (~2-5s) | 🐌 Slower (~10-30s) |
-| **Privacy** | ☁️ Cloud API | 🔒 100% Local |
-| **Cost** | 💰 Pay per API call | 🆓 Free |
-| **Internet Required** | ✅ Yes | ❌ No (after model download) |
-| **Browser Support** | All modern browsers | Chrome 113+, Edge 113+ (WebGPU) |
-| **Model Download** | None | 100MB-1GB (one-time) |
-| **Concurrent Requests** | ✅ Parallel (3 batches) | ❌ Serial (one at a time) |
-
-**Recommendation**: 
-- **Production**: Use OpenAI for best user experience
-- **Privacy-focused**: Use WebLLM for sensitive data
-- **Development**: Use WebLLM to avoid API costs
+| Feature | Capabilities |
+|---------|--------------|
+| **Translation** | ✅ Supported |
+| **Summary** | ✅ Supported |
+| **Speed** | ⚡ Fast (~2-5s) |
+| **Browser Support** | All modern browsers |
+| **Concurrent Requests** | ✅ Parallel (3 batches) |
 
 ---
 
@@ -67,11 +50,8 @@ flowchart TD
     D --> E{Cache Hit?}
     E -->|Yes| F[Use Cached Translation]
     E -->|No| G[Group by Category]
-    G --> H{Backend Type?}
-    H -->|OpenAI| I[Parallel Batch Translation]
-    H -->|WebLLM| J[Serial Translation with Progress]
-    I --> K[Merge Results]
-    J --> K
+    G --> H[Parallel Batch Translation]
+    H --> K[Merge Results]
     K --> L[Store in Cache]
     L --> M[Update UI]
     F --> M
@@ -82,10 +62,9 @@ flowchart TD
 1. **Analysis Completed**: DQM API returns English results
 2. **Target Language Detection**: From i18n context (`en`, `de`, `es`)
 3. **Cache Check**: IndexedDB lookup by checkpoint hash
-4. **Backend Selection**: OpenAI (parallel) vs WebLLM (serial)
-5. **Translation**: Batch processing with progress tracking
-6. **Cache Storage**: Persist to IndexedDB for future use
-7. **UI Update**: Replace English text with translations
+4. **Translation**: Batch processing with progress tracking
+5. **Cache Storage**: Persist to IndexedDB for future use
+6. **UI Update**: Replace English text with translations
 
 ### OpenAI Backend
 
@@ -111,7 +90,6 @@ function App() {
         websiteId: 'your-website-id',
         translation: {
           enabledByDefault: true,
-          modelId: 'gpt-4o-mini',
           computeBudgetMs: 15000, // 15 seconds timeout
         },
       }}
@@ -125,7 +103,6 @@ function App() {
 ```typescript
 // Option 1: Via localStorage (before component mount)
 localStorage.setItem('dqm_openai_apiKey', 'sk-...');
-localStorage.setItem('dqm_ai_backend', 'openai');
 
 // Option 2: Via AISettingsDialog component (user enters key in UI)
 // Users can configure via settings modal
@@ -145,76 +122,6 @@ VITE_OPENAI_BASE_URL=https://api.openai.com/v1  # Optional, for custom endpoints
 - ✅ Fast mode (~5s) and Full mode (~30s)
 - ✅ Automatic retry with exponential backoff
 - ✅ Rate limit handling (429 errors)
-
-### WebLLM Local Backend
-
-**Models Available** (Presets):
-
-| Preset | Model | Size | Context Window | Speed |
-|--------|-------|------|----------------|-------|
-| `tiny` | SmolLM2-360M | ~200 MB | 900 tokens | ⚡⚡⚡ Fast |
-| `small` | Llama-3.2-1B | ~700 MB | 1800 tokens | ⚡⚡ Medium |
-| `medium` | Llama-3.2-3B | ~2 GB | 1800 tokens | ⚡ Slower |
-| `large` | Phi-3.5-mini | ~2.5 GB | 3500 tokens | 🐌 Slow |
-
-**Setup**:
-
-```typescript
-import { DQMSidebar } from '@crownpeak/dqm-react-component';
-
-function App() {
-  return (
-    <DQMSidebar
-      open={true}
-      onClose={() => {}}
-      onOpen={() => {}}
-      config={{
-        apiKey: 'your-dqm-api-key',
-        websiteId: 'your-website-id',
-        translation: {
-          enabledByDefault: true,
-          modelId: 'small', // Preset: tiny, small, medium, large
-        },
-      }}
-    />
-  );
-}
-```
-
-**localStorage Configuration**:
-
-```typescript
-localStorage.setItem('dqm_ai_backend', 'local');
-localStorage.setItem('dqm_ai_model_preset', 'small'); // tiny, small, medium, large
-localStorage.setItem('dqm_translate_results_enabled', 'true');
-```
-
-**Browser Requirements**:
-- **Chrome 113+** or **Edge 113+** (WebGPU support required)
-- **GPU**: Any modern GPU (integrated or dedicated)
-- **RAM**: 4GB minimum, 8GB recommended
-- ❌ **Not supported**: Firefox, Safari (no WebGPU yet)
-
-**Check WebGPU Support**:
-
-```typescript
-const hasWebGPU = 'gpu' in navigator;
-console.log('WebGPU supported:', hasWebGPU);
-```
-
-**Model Download**:
-- First-time use: Downloads model to IndexedDB (~200MB-2GB)
-- Progress tracking: `0-100%` displayed in UI
-- Fallback to Cache API if IndexedDB quota exceeded
-- Models cached permanently (until cleared)
-
-**Features**:
-- ✅ 100% client-side, no API calls
-- ✅ Works offline (after model download)
-- ✅ Privacy-preserving (data never leaves browser)
-- ✅ WebGPU-accelerated inference
-- ⚠️ Serial execution (one checkpoint at a time)
-- ⚠️ Context window limits (truncation for long text)
 
 ### Translation Modes
 
@@ -331,8 +238,8 @@ flowchart TD
     J -->|Yes| K[Parse Bullet Points]
     J -->|No| L[Retry with Fallback]
     L --> M{Fallback Level?}
-    M -->|1| N[Try Single Item]
-    M -->|2| O[Try Tiny Subset]
+    M -->|1| O[Try Tiny Subset]
+    M -->|2| N[Try Single Item]
     M -->|3| P[Fail Gracefully]
     N --> J
     O --> J
@@ -348,7 +255,7 @@ flowchart TD
 4. **Retry Logic**: Exponential backoff with fallback strategies
 5. **Parse Results**: Extract `<li>` bullet points
 6. **Cache**: Store in-memory per `assetId`
-7. **Display**: Show in [AISummaryCard](src/components/cards/AISummaryCard.tsx)
+7. **Display**: Show in AISummaryCard component
 
 ### Chunking Strategy
 
@@ -418,12 +325,11 @@ interface SummaryStats {
 
 ```typescript
 summary: {
-  enabledByDefault: true,     // Auto-generate after analysis
   timeoutMs: 45000,           // 45 seconds timeout
 }
 ```
 
-**Important**: Summary **always uses OpenAI**, even if translation is set to WebLLM. This is because summary generation requires higher-quality models for coherent bullet points.
+> **Note:** Summary is enabled/disabled via the AI Settings dialog or localStorage (`dqm_ai_summary_enabled`).
 
 ---
 
@@ -440,23 +346,19 @@ interface DQMConfig {
     /** Enable translation by default */
     enabledByDefault?: boolean;      // Default: false
     
-    /** Model ID override (OpenAI: 'gpt-4o-mini', WebLLM: 'small') */
-    modelId?: string;                // Default: auto-detected
-    
     /** Compute budget in milliseconds (timeout) */
     computeBudgetMs?: number;        // Default: 15000 (Fast mode)
   };
   
   /** AI Summary Configuration */
   summary?: {
-    /** Enable summary by default */
-    enabledByDefault?: boolean;      // Default: true
-    
     /** Summary generation timeout in milliseconds */
     timeoutMs?: number;              // Default: 45000
   };
 }
 ```
+
+> **Note:** The OpenAI model is configured via localStorage (`dqm_openai_model`) or the AI Settings dialog, not via `DQMConfig`. See [localStorage Keys](#localstorage-keys).
 
 **Example: Full AI Configuration**
 
@@ -469,16 +371,14 @@ interface DQMConfig {
     apiKey: 'your-dqm-api-key',
     websiteId: 'your-website-id',
     
-    // AI Translation (OpenAI)
+    // AI Translation
     translation: {
       enabledByDefault: true,
-      modelId: 'gpt-4o-mini',
       computeBudgetMs: 30000,  // 30s for Full mode
     },
     
     // AI Summary
     summary: {
-      enabledByDefault: true,
       timeoutMs: 60000,  // 60s for complex analyses
     },
   }}
@@ -495,13 +395,10 @@ The AI features store configuration in `localStorage`:
 |-----|------|---------|-------------|
 | `dqm_translate_results_enabled` | `'true' \| 'false'` | `'false'` | Translation toggle |
 | `dqm_translate_results_mode` | `'fast' \| 'full'` | `'fast'` | Translation mode |
-| `dqm_ai_backend` | `'openai' \| 'local'` | `'openai'` | Backend selection |
-| `dqm_ai_model_preset` | `'tiny' \| 'small' \| 'medium' \| 'large'` | `'small'` | WebLLM model preset |
 | `dqm_ai_summary_enabled` | `'true' \| 'false'` | `'true'` | Summary toggle |
 | `dqm_openai_apiKey` | `string` | `null` | OpenAI API key |
-| `dqm_openai_model` | `string` | `'gpt-4o-mini'` | OpenAI model name |
+| `dqm_openai_model` | `string` | `'gpt-4.1-mini'` | OpenAI model name |
 | `dqm_openai_baseUrl` | `string` | `'https://api.openai.com/v1'` | OpenAI base URL |
-| `dqm_translation_persistent_storage` | `'true' \| 'false'` | `'false'` | Persistent storage granted |
 
 **Access Pattern**:
 
@@ -513,30 +410,22 @@ const translationEnabled = getLocalStorageItem('dqm_translate_results_enabled') 
 
 // Set OpenAI API key
 setLocalStorageItem('dqm_openai_apiKey', 'sk-...');
-
-// Switch to local backend
-setLocalStorageItem('dqm_ai_backend', 'local');
-setLocalStorageItem('dqm_ai_model_preset', 'small');
 ```
 
 ---
 
-## Performance Comparison
+## Performance
 
 ### Translation Speed
 
-| Backend | Checkpoint Count | Time (Fast Mode) | Time (Full Mode) |
-|---------|------------------|------------------|------------------|
-| **OpenAI (gpt-4o-mini)** | 10 | ~2-3s | ~5-8s |
-| **OpenAI (gpt-4o-mini)** | 50 | ~5-8s | ~15-25s |
-| **OpenAI (gpt-4o-mini)** | 100 | ~10-15s | ~30-60s |
-| **WebLLM (tiny)** | 10 | ~5-10s | ~15-30s |
-| **WebLLM (small)** | 10 | ~10-20s | ~30-60s |
-| **WebLLM (medium)** | 10 | ~20-40s | ~60-120s |
+| Checkpoint Count | Time (Fast Mode) | Time (Full Mode) |
+|------------------|------------------|------------------|
+| 10 | ~2-3s | ~5-8s |
+| 50 | ~5-8s | ~15-25s |
+| 100 | ~10-15s | ~30-60s |
 
 **Notes**:
-- OpenAI times assume good network connection (50ms latency)
-- WebLLM times assume GPU available (without GPU: 5-10x slower)
+- Times assume good network connection (50ms latency)
 - Cached checkpoints: instant (0ms)
 
 ### Summary Speed
@@ -548,7 +437,7 @@ setLocalStorageItem('dqm_ai_model_preset', 'small');
 | 50 | ~8-12s | 1-2 (tiny subset) |
 | 100+ | N/A | Fails (too large) |
 
-### Cost Comparison (OpenAI)
+### Cost Estimation (OpenAI)
 
 Based on `gpt-4o-mini` pricing (~$0.15/1M input tokens, ~$0.60/1M output tokens):
 
@@ -564,8 +453,6 @@ Based on `gpt-4o-mini` pricing (~$0.15/1M input tokens, ~$0.60/1M output tokens)
 - Summary only: ~$0.60/month
 - Both: ~$5.10/month
 
-**WebLLM costs**: $0 (free, runs locally)
-
 ---
 
 ## Troubleshooting
@@ -575,7 +462,7 @@ Based on `gpt-4o-mini` pricing (~$0.15/1M input tokens, ~$0.60/1M output tokens)
 **Problem**: Translation toggle enabled but results still in English
 
 **Solutions**:
-1. **Check OpenAI API Key** (if using OpenAI backend):
+1. **Check OpenAI API Key**:
    ```typescript
    const apiKey = localStorage.getItem('dqm_openai_apiKey');
    console.log('API Key set:', !!apiKey);
@@ -583,60 +470,16 @@ Based on `gpt-4o-mini` pricing (~$0.15/1M input tokens, ~$0.60/1M output tokens)
    - Missing key → Add via `AISettingsDialog` or `localStorage.setItem()`
    - Invalid key → Check OpenAI dashboard for correct key
 
-2. **Check Backend Selection**:
-   ```typescript
-   const backend = localStorage.getItem('dqm_ai_backend');
-   console.log('Backend:', backend); // Should be 'openai' or 'local'
-   ```
-
-3. **Check Translation Enabled**:
+2. **Check Translation Enabled**:
    ```typescript
    const enabled = localStorage.getItem('dqm_translate_results_enabled');
    console.log('Translation enabled:', enabled === 'true');
    ```
 
-4. **Check Console for Errors**:
+3. **Check Console for Errors**:
    ```bash
    # Enable debug logging
    logger.setDebugMode(true);
-   ```
-
-### WebLLM Not Loading
-
-**Problem**: "Initializing model..." stuck at 0% or error shown
-
-**Solutions**:
-
-1. **Check WebGPU Support**:
-   ```typescript
-   if (!('gpu' in navigator)) {
-     console.error('WebGPU not supported');
-     // Solution: Use Chrome 113+ or Edge 113+
-   }
-   ```
-
-2. **Check GPU Availability**:
-   - Open `chrome://gpu` in Chrome/Edge
-   - Look for "WebGPU: Enabled"
-   - If disabled: Update graphics drivers
-
-3. **Check Storage Quota**:
-   ```typescript
-   const estimate = await navigator.storage.estimate();
-   console.log('Storage:', estimate.usage, '/', estimate.quota);
-   // If quota exceeded: Clear cache or free space
-   ```
-
-4. **Clear Model Cache**:
-   ```typescript
-   // Open DevTools → Application → IndexedDB
-   // Delete 'webllm' database
-   indexedDB.deleteDatabase('webllm');
-   ```
-
-5. **Try Smaller Model**:
-   ```typescript
-   localStorage.setItem('dqm_ai_model_preset', 'tiny'); // Smallest model
    ```
 
 ### Translation Timeout
@@ -656,10 +499,7 @@ Based on `gpt-4o-mini` pricing (~$0.15/1M input tokens, ~$0.60/1M output tokens)
    - Fewer categories → faster translation
    - Or use Fast mode and accept partial results
 
-3. **Switch to OpenAI** (if using WebLLM):
-   - WebLLM is slower, OpenAI is ~5x faster
-
-4. **Check Network** (if using OpenAI):
+3. **Check Network**:
    ```bash
    # Test OpenAI API connectivity
    curl https://api.openai.com/v1/models -H "Authorization: Bearer sk-..."
@@ -702,37 +542,19 @@ Based on `gpt-4o-mini` pricing (~$0.15/1M input tokens, ~$0.60/1M output tokens)
 | 500 | OpenAI server error | Retry later, or check OpenAI status page |
 | 503 | Service unavailable | Temporary outage, retry in 5 minutes |
 
-### Browser Compatibility Issues
-
-**Problem**: WebLLM not working in Firefox/Safari
-
-**Solution**: WebLLM requires WebGPU, which is only in Chrome/Edge:
-- **Chrome 113+**: ✅ Full support
-- **Edge 113+**: ✅ Full support
-- **Firefox**: ❌ No WebGPU yet (coming soon)
-- **Safari**: ❌ No WebGPU yet (experimental only)
-
-**Workaround**: Use OpenAI backend instead, which works in all browsers.
-
 ---
 
 ## Advanced Topics
 
 ### Custom Model Configuration
 
-**OpenAI Custom Model**:
+**OpenAI Custom Model** (via localStorage):
 
 ```typescript
-translation: {
-  modelId: 'gpt-4o',  // Higher quality than gpt-4o-mini
-}
-```
+// Set model via localStorage before component mounts
+localStorage.setItem('dqm_openai_model', 'gpt-4o');  // Higher quality than gpt-4.1-mini
 
-**WebLLM Custom Model URL**:
-
-```typescript
-// Advanced: Load custom GGUF model
-localStorage.setItem('dqm_ai_model_url', 'https://example.com/my-model.gguf');
+// Or users can configure via the AI Settings dialog in the UI
 ```
 
 ### Translation Cache Clearing
@@ -743,36 +565,10 @@ localStorage.setItem('dqm_ai_model_url', 'https://example.com/my-model.gguf');
 // Clear translation cache
 indexedDB.deleteDatabase('DQMTranslationCache');
 
-// Clear WebLLM model cache
-indexedDB.deleteDatabase('webllm');
-
 // Clear localStorage settings
 localStorage.removeItem('dqm_translate_results_enabled');
 localStorage.removeItem('dqm_openai_apiKey');
 // ... (see localStorage Keys table)
-```
-
-### Monitoring Translation Progress
-
-```typescript
-import { useAITranslation } from '@crownpeak/dqm-react-component';
-
-function MyComponent() {
-  const { progress, translatingIds, translatedIds } = useAITranslation({
-    data: analysisData,
-    enabled: true,
-    backend: 'local',
-  });
-  
-  console.log('Progress:', progress);
-  // { translatedCheckpoints: 15, totalCheckpoints: 50, isPartial: false }
-  
-  console.log('Currently translating:', translatingIds);
-  // Set(['checkpoint-1', 'checkpoint-2'])
-  
-  console.log('Already translated:', translatedIds);
-  // Set(['checkpoint-3', 'checkpoint-4'])
-}
 ```
 
 ### Custom Summary Formatting

@@ -1,5 +1,3 @@
-# Development Guide
-
 ## Running the Complete Stack
 
 ### Start Development (Frontend + Backend)
@@ -8,17 +6,17 @@
 npm run dev
 ```
 
-This runs both servers concurrently:
-- **Frontend (Vite)**: http://localhost:5173
-- **Backend (Express)**: http://localhost:3001
+This starts the Vite dev server with integrated backend API:
+- **Frontend + Backend**: http://localhost:5173
+- Backend routes (`/auth/*`, `/dqm/*`) are handled by Vite plugin
 
-### Start Individual Servers
+### Alternative: Standalone Express Server
 
 ```bash
-# Frontend only
+# Vite dev server (same as npm run dev)
 npm run dev:client
 
-# Backend only
+# Standalone Express server with Redis (port 3001)
 npm run dev:server
 ```
 
@@ -80,7 +78,7 @@ The component supports two modes:
 ```tsx
 <DQMSidebar
   config={{
-    authBackendUrl: 'http://localhost:3001',
+    authBackendUrl: '', // Dev: empty (same origin) | Prod: 'https://your-backend.com'
     useLocalStorage: true,
   }}
 />
@@ -88,7 +86,7 @@ The component supports two modes:
 
 - All API calls proxied through backend
 - Session token stored in localStorage
-- Real credentials never exposed to client
+- Real credentials handled server-side only
 
 ### 2. Direct Mode (Development/Staging)
 
@@ -109,11 +107,11 @@ The component supports two modes:
 
 ### Test Backend Mode
 
-1. Start both servers: `npm run dev`
+1. Start dev server: `npm run dev`
 2. Open http://localhost:5173
 3. Click "Login" and enter credentials
 4. Backend validates and issues session token
-5. All API calls go through http://localhost:3001
+5. All API calls go through http://localhost:5173 (same origin)
 
 ### Test Direct Mode
 
@@ -189,12 +187,14 @@ Serves `dist/` plus demo pages via `serve.json` rewrites:
 ### Frontend (.env)
 
 ```env
-VITE_BACKEND_URL=http://localhost:3001
+# Not needed in dev mode - backend is integrated via Vite plugin
+# VITE_BACKEND_URL=http://localhost:3001
 ```
 
-### Backend (.env)
+### Standalone Server (.env)
 
 ```env
+# Only for npm run dev:server (standalone Express with Redis)
 PORT=3001
 CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 DQM_API_BASE_URL=https://api.crownpeak.net/dqm-cms/v1
@@ -203,10 +203,10 @@ JWT_SECRET=your-secret-key
 
 ## API Testing with cURL
 
-### Login
+### Login (Dev Mode - Port 5173)
 
 ```bash
-curl -X POST http://localhost:3001/auth/login \
+curl -X POST http://localhost:5173/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "apiKey": "YOUR_API_KEY",
@@ -222,10 +222,10 @@ Response:
 }
 ```
 
-### Start Analysis
+### Start Analysis (Dev Mode)
 
 ```bash
-curl -X POST http://localhost:3001/dqm/assets \
+curl -X POST http://localhost:5173/dqm/assets \
   -H "Authorization: Bearer YOUR_SESSION_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -234,10 +234,10 @@ curl -X POST http://localhost:3001/dqm/assets \
   }'
 ```
 
-### Get Results
+### Get Results (Dev Mode)
 
 ```bash
-curl -X GET http://localhost:3001/dqm/assets/ASSET_ID \
+curl -X GET http://localhost:5173/dqm/assets/ASSET_ID \
   -H "Authorization: Bearer YOUR_SESSION_TOKEN"
 ```
 
@@ -253,10 +253,10 @@ Backend logs all requests automatically. Check terminal output:
 [SessionStore] Created session: abc12345... (expires in 1440 minutes)
 ```
 
-### Check Session Status
+### Check Session Status (Dev Mode)
 
 ```bash
-curl -X GET http://localhost:3001/auth/session \
+curl -X GET http://localhost:5173/auth/session \
   -H "Authorization: Bearer YOUR_SESSION_TOKEN"
 ```
 
@@ -283,12 +283,13 @@ CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 
 ### Port Already in Use
 
-**Problem:** `Error: listen EADDRINUSE: address already in use :::3001`
+**Problem:** `Error: listen EADDRINUSE: address already in use :::5173`
 
 **Solution:** Kill process or change port:
 ```bash
-lsof -ti:3001 | xargs kill -9
-# or change PORT in .env
+lsof -ti:5173 | xargs kill -9
+# For standalone server (port 3001):
+# lsof -ti:3001 | xargs kill -9
 ```
 
 ### Session Expired

@@ -1,11 +1,9 @@
-# DQM Backend Server
-
 This package includes an optional Express.js backend server that acts as a secure proxy for the Crownpeak DQM API.
 
 ## Why Use the Backend?
 
 The backend server provides:
-- **Secure API Key Storage**: API keys never exposed to the browser
+- **Secure API Key Storage**: API keys remain on the server
 - **Session Management**: Token-based authentication with Redis support
 - **Request Proxying**: All DQM API calls routed through your backend
 - **CORS Protection**: Controlled access to your DQM resources
@@ -52,7 +50,8 @@ function App() {
       onClose={() => setIsOpen(false)}
       onOpen={() => setIsOpen(true)}
       config={{
-        authBackendUrl: 'http://localhost:3001', // Your server URL
+        authBackendUrl: 'http://localhost:3001', // Standalone server URL
+        // For npm run dev (Vite integrated): use '' (empty string)
         useLocalStorage: true
       }}
     />
@@ -63,15 +62,15 @@ function App() {
 ## API Endpoints
 
 ### Authentication
-- `POST /api/auth/login` - Login with API key and website ID
-- `POST /api/auth/logout` - Invalidate session token
-- `GET /api/auth/session` - Get current session info
+- `POST /auth/login` - Login with API key and website ID
+- `POST /auth/logout` - Invalidate session token
+- `GET /auth/session` - Get current session info
 
 ### DQM Proxy
-- `POST /api/dqm/assets` - Create analysis asset
-- `GET /api/dqm/assets/:assetId/status` - Get analysis status
-- `GET /api/dqm/assets/:assetId/pagehighlight/all` - Get all highlights
-- `GET /api/dqm/assets/:assetId/pagehighlight/:checkpointId` - Get specific checkpoint
+- `POST /dqm/assets` - Create analysis asset
+- `GET /dqm/assets/:assetId/status` - Get analysis status
+- `GET /dqm/assets/:assetId/pagehighlight/all` - Get all highlights
+- `GET /dqm/assets/:assetId/pagehighlight/:checkpointId` - Get specific checkpoint
 
 ## Environment Variables
 
@@ -100,7 +99,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-RUN npm ci --production
+RUN npm i --production
 
 # Set environment
 ENV PORT=3001

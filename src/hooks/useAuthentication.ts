@@ -124,7 +124,7 @@ export function useAuthentication(config: UseAuthenticationConfig): UseAuthentic
       }
 
       // Priority 3: Check if authentication backend is configured
-      if (dqmConfig?.authBackendUrl || dqmConfig?.oauth2Config) {
+      if (dqmConfig?.authBackendUrl) {
         setIsAuthenticated(false);
         return;
       }

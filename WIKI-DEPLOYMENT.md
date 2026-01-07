@@ -54,7 +54,7 @@ Complete guide for deploying and maintaining the Crownpeak DQM React Component d
 - **[Home](wiki/Home.md)** - Main landing page with quick start
 - **[Quick-Start](wiki/Quick-Start.md)** - Installation and basic setup
 - **[Examples](wiki/Examples.md)** - 10 integration examples (React, Next.js, AI features)
-- **[Authentication](wiki/Authentication.md)** - OAuth2, direct API, backend proxy with Mermaid diagrams
+- **[Authentication](wiki/Authentication.md)** - Direct API, backend proxy with Mermaid diagrams
 
 ### 2. AI Features (4 pages)
 - **[AI-Features](wiki/AI-Features.md)** - Complete AI documentation with 4 Mermaid diagrams
@@ -64,7 +64,7 @@ Complete guide for deploying and maintaining the Crownpeak DQM React Component d
 
 ### 3. Advanced Usage (2 pages)
 - **[Widget-Bundle](wiki/Widget-Bundle.md)** - IIFE/ESM bundles, CMS integrations
-- **[Backend-Server](wiki/Backend-Server.md)** - OAuth2 backend server setup
+- **[Backend-Server](wiki/Backend-Server.md)** - Backend server setup
 
 ### 4. Development (4 pages)
 - **[Development](wiki/Development.md)** - Local development guide
@@ -229,14 +229,14 @@ git push origin feat/localization
 The wiki contains **8 Mermaid diagrams** across 3 files:
 
 ### AI-Features.md (4 diagrams)
-1. Translation Flow - OpenAI/WebLLM processing pipeline
+1. Translation Flow - OpenAI processing pipeline
 2. Summary Generation Flow - Chunking strategies and fallbacks
 3. Chunking Strategy Decision - Token-based chunking logic
 4. Caching Architecture - IndexedDB + In-Memory caching
 
 ### Authentication.md (3 diagrams)
 1. Authentication Flow Overview - Props → localStorage → Backend → Login form
-2. OAuth2 Flow (Sequence) - Complete OAuth2 authorization flow
+2. Backend Session Flow (Sequence) - Complete session-based authorization flow
 3. Session Type Flow - Direct vs Backend proxy API calls
 
 ### Widget-Bundle.md (1 diagram)
@@ -299,7 +299,6 @@ git clone https://github.com/Crownpeak/dqm-react-component.wiki.git
 
 **Solution:** These are placeholder pages for future expansion:
 - `AI-Translation-OpenAI.md`
-- `AI-Translation-WebLLM.md`
 - `AI-Summary.md`
 - `AI-Caching.md`
 - `Internationalization.md`

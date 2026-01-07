@@ -1,4 +1,4 @@
-// OAuth Callback Page
+// Session Callback Page
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -33,7 +33,7 @@ export const CallbackPage: React.FC = () => {
         const state = params.get('state');
         const error = params.get('error');
 
-        // Check for OAuth errors
+        // Check for auth errors
         if (error) {
           throw new Error(params.get('error_description') || error);
         }
@@ -43,13 +43,13 @@ export const CallbackPage: React.FC = () => {
         }
 
         // Verify state for CSRF protection
-        const savedState = sessionStorage.getItem('oauth_state');
+        const savedState = sessionStorage.getItem('auth_state');
         if (state !== savedState) {
           throw new Error('Invalid state parameter - possible CSRF attack');
         }
 
-        // Exchange code for token
-        const response = await fetch('/auth/oauth2/callback', {
+        // Exchange code for session token
+        const response = await fetch('/auth/callback', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -69,7 +69,7 @@ export const CallbackPage: React.FC = () => {
 
         // Store session token
         localStorage.setItem('dqm_sessionToken', data.sessionToken);
-        sessionStorage.removeItem('oauth_state'); // Clean up
+        sessionStorage.removeItem('auth_state'); // Clean up
 
         // Notify parent window (if opened in popup/iframe)
         if (window.opener || window.parent !== window) {
@@ -94,7 +94,7 @@ export const CallbackPage: React.FC = () => {
           }, 2000);
         }
       } catch (err) {
-        console.error('[OAuth Callback] Error:', err);
+        console.error('[Auth Callback] Error:', err);
         setStatus('error');
         setMessage(err instanceof Error ? err.message : 'Authentication failed');
       }

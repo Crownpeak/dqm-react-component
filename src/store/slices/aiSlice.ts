@@ -5,8 +5,8 @@
  */
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-export type AIProvider = 'openai' | 'webllm' | 'none';
-export type TranslationProvider = 'webllm' | 'openai' | 'none';
+export type AIProvider = 'openai' | 'none';
+export type TranslationProvider = 'openai' | 'none';
 
 export interface AISettings {
   /** AI provider for summaries */
@@ -19,10 +19,6 @@ export interface AISettings {
   enabled: boolean;
   /** Translation provider */
   translationProvider: TranslationProvider;
-  /** Whether WebLLM is loaded */
-  webllmLoaded: boolean;
-  /** WebLLM loading progress (0-100) */
-  webllmProgress: number;
 }
 
 export interface AISummary {
@@ -54,11 +50,9 @@ export interface AISliceState {
 const initialSettings: AISettings = {
   provider: 'none',
   openaiApiKey: null,
-  openaiModel: 'gpt-4o-mini',
+  openaiModel: 'gpt-4.1-mini',
   enabled: false,
   translationProvider: 'none',
-  webllmLoaded: false,
-  webllmProgress: 0,
 };
 
 const initialState: AISliceState = {
@@ -110,22 +104,6 @@ export const aiSlice = createSlice({
     /** Set translation provider */
     setTranslationProvider: (state, action: PayloadAction<TranslationProvider>) => {
       state.settings.translationProvider = action.payload;
-    },
-
-    /** Update WebLLM loading state */
-    setWebLLMProgress: (state, action: PayloadAction<number>) => {
-      state.settings.webllmProgress = action.payload;
-      if (action.payload >= 100) {
-        state.settings.webllmLoaded = true;
-      }
-    },
-
-    /** Set WebLLM loaded state */
-    setWebLLMLoaded: (state, action: PayloadAction<boolean>) => {
-      state.settings.webllmLoaded = action.payload;
-      if (action.payload) {
-        state.settings.webllmProgress = 100;
-      }
     },
 
     /** Open settings dialog */
@@ -227,8 +205,6 @@ export const {
   setOpenAIApiKey,
   setOpenAIModel,
   setTranslationProvider,
-  setWebLLMProgress,
-  setWebLLMLoaded,
   openSettings,
   closeSettings,
   toggleSettings,
@@ -252,8 +228,6 @@ export const selectOpenAIApiKey = (state: { ai: AISliceState }) => state.ai.sett
 export const selectOpenAIModel = (state: { ai: AISliceState }) => state.ai.settings.openaiModel;
 export const selectTranslationProvider = (state: { ai: AISliceState }) =>
   state.ai.settings.translationProvider;
-export const selectWebLLMLoaded = (state: { ai: AISliceState }) => state.ai.settings.webllmLoaded;
-export const selectWebLLMProgress = (state: { ai: AISliceState }) => state.ai.settings.webllmProgress;
 export const selectIsSettingsOpen = (state: { ai: AISliceState }) => state.ai.isSettingsOpen;
 export const selectIsGenerating = (state: { ai: AISliceState }) => state.ai.isGenerating;
 export const selectGeneratingFor = (state: { ai: AISliceState }) => state.ai.generatingFor;

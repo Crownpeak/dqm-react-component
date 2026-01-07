@@ -8,8 +8,8 @@ import { logger } from '../../utils/logger';
 import type { SessionType, DQMConfig } from '../../types';
 import { getLocalStorageItem, setLocalStorageItem, removeLocalStorageItem } from '../../utils/localStorage';
 
-// Extended session type for internal Redux state (includes 'direct' from types.ts)
-export type AuthSessionType = SessionType | 'oauth2';
+// Extended session type for internal Redux state
+export type AuthSessionType = SessionType;
 
 export interface AuthSliceState {
   /** API key for DQM service */
@@ -18,11 +18,13 @@ export interface AuthSliceState {
   websiteId: string | null;
   /** Whether user is authenticated */
   isAuthenticated: boolean;
-  /** Session type (direct, backend, or oauth2) */
+  /** Session type (direct or backend) */
   sessionType: AuthSessionType | null;
-  /** OAuth2 access token if using OAuth */
+  /** Backend session token */
+  sessionToken: string | null;
+  /** Access token for backend authentication */
   accessToken: string | null;
-  /** OAuth2 refresh token */
+  /** Refresh token for backend authentication */
   refreshToken: string | null;
   /** Whether to remember credentials */
   rememberMe: boolean;
@@ -39,6 +41,7 @@ const initialState: AuthSliceState = {
   websiteId: null,
   isAuthenticated: false,
   sessionType: null,
+  sessionToken: null,
   accessToken: null,
   refreshToken: null,
   rememberMe: false,
@@ -110,7 +113,7 @@ export const initializeAuth = createAsyncThunk(
     }
 
     // Priority 3: Auth backend configured but no credentials yet
-    if (config?.authBackendUrl || config?.oauth2Config) {
+    if (config?.authBackendUrl) {
       return { isAuthenticated: false };
     }
 
@@ -215,18 +218,14 @@ export const authSlice = createSlice({
       }
     },
 
-    /** Set OAuth2 tokens */
-    setOAuthTokens: (
+    /** Set session token for backend authentication */
+    setSessionToken: (
       state,
-      action: PayloadAction<{
-        accessToken: string;
-        refreshToken?: string;
-      }>
+      action: PayloadAction<{ accessToken: string }>
     ) => {
       state.accessToken = action.payload.accessToken;
-      state.refreshToken = action.payload.refreshToken || null;
-      state.isAuthenticated = true;
       state.sessionType = 'backend';
+      state.isAuthenticated = true;
     },
 
     /** Set remember me preference */
@@ -358,7 +357,7 @@ export const {
   setApiKey,
   setWebsiteId,
   setCredentials,
-  setOAuthTokens,
+  setSessionToken,
   setRememberMe,
   acknowledgeStorageWarning,
   setAuthLoading,

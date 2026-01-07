@@ -9,7 +9,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { summarizeDqmResults } from '../../utils/webllmTranslation';
+import { summarizeDqmResults } from '../../utils/translationUtils';
 import type { UseAISummaryOptions, UseAISummaryReturn, SummaryState, SummaryStats } from './types';
 import { fnv1aHash } from '../../utils/translationCache';
 import { logger } from '../../utils/logger';

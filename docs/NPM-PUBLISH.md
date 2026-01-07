@@ -1,5 +1,3 @@
-# NPM Publishing Guide
-
 ## Prerequisites
 
 1. **NPM Account**: Ensure you have an account on [npmjs.com](https://www.npmjs.com/)

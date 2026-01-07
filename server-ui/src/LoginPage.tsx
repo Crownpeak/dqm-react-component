@@ -1,4 +1,4 @@
-// OAuth Login Page with Beautiful Design
+// Login Page with Beautiful Design
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';

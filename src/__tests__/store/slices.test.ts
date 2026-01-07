@@ -230,11 +230,9 @@ describe('aiSlice', () => {
     settings: {
       provider: 'none' as const,
       openaiApiKey: null,
-      openaiModel: 'gpt-4o-mini',
+      openaiModel: 'gpt-4.1-mini',
       enabled: false,
       translationProvider: 'none' as const,
-      webllmLoaded: false,
-      webllmProgress: 0,
     },
     summaries: {},
     isSettingsOpen: false,

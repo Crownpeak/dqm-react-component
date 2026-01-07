@@ -1,6 +1,4 @@
-# DQM Authentication Configuration Examples
-
-This document shows different ways to configure authentication for the DQM Sidebar component.
+This document explains different ways to configure authentication for the DQM Sidebar component.
 
 ## Authentication Flow Overview
 
@@ -13,57 +11,21 @@ flowchart TD
     D -->|Yes| E[Use cached credentials]
     D -->|No| F{Backend Auth?}
     
-    F -->|Yes - Custom| G[Call authBackendUrl/auth/token]
-    F -->|Yes - OAuth2| H[Start OAuth2 Flow]
-    F -->|No| I[Show Login Form]
+    F -->|Yes| G[Call authBackendUrl/auth/login]
+    F -->|No| H[Show Login Form]
     
-    C --> J[Authenticated]
-    E --> J
-    G --> K{Success?}
-    H --> L[OAuth2 Callback]
-    L --> K
-    K -->|Yes| J
-    K -->|No| I
-    I --> M[User Enters Credentials]
-    M --> N[Store in localStorage]
-    N --> J
+    C --> I[Authenticated]
+    E --> I
+    G --> J{Success?}
+    J -->|Yes| I
+    J -->|No| H
+    H --> K[User Enters Credentials]
+    K --> L[Store in localStorage]
+    L --> I
     
-    J --> O[Fetch HTML from DOM]
-    O --> P[Send to DQM API]
-    P --> Q[Display Analysis Results]
-```
-
-## OAuth2 Flow (Sequence Diagram)
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant DQMSidebar as DQM Sidebar
-    participant Browser
-    participant AuthServer as OAuth2 Auth Server
-    participant Backend as Your Backend
-    participant DQMApi as Crownpeak DQM API
-
-    User->>DQMSidebar: Open sidebar
-    DQMSidebar->>Browser: Check localStorage for credentials
-    Browser-->>DQMSidebar: No credentials found
-    
-    DQMSidebar->>AuthServer: Redirect to authUrl with clientId, redirectUri, scope
-    AuthServer->>User: Show login page
-    User->>AuthServer: Enter credentials
-    AuthServer-->>Browser: Redirect to redirectUri with authorization code
-    
-    Browser->>DQMSidebar: Callback with code
-    DQMSidebar->>Backend: POST /auth/oauth2/callback (code, redirectUri)
-    Backend->>AuthServer: POST /token (code, clientId, clientSecret)
-    AuthServer-->>Backend: Return access_token
-    Backend->>Backend: Fetch user's DQM credentials
-    Backend-->>DQMSidebar: Return apiKey + websiteId
-    
-    DQMSidebar->>Browser: Store credentials in localStorage
-    DQMSidebar->>DQMApi: Authenticate with apiKey + websiteId
-    DQMApi-->>DQMSidebar: Success
-    DQMSidebar->>User: Show analysis interface
+    I --> M[Extract HTML from current page]
+    M --> N[Send to DQM API]
+    N --> O[Display Analysis Results]
 ```
 
 ## Session Type Flow
@@ -81,7 +43,7 @@ flowchart TD
     
     D --> H[API Calls go through Backend Proxy]
     H --> I[Headers: Authorization Bearer sessionToken]
-    I --> J[POST yourbackend.com/api/dqm/assets]
+    I --> J[POST yourbackend.com/dqm/assets]
     J --> K[Backend forwards to DQM API]
     
     G --> L[DQM Analysis Result]
@@ -89,7 +51,9 @@ flowchart TD
     L --> M[Display in Sidebar]
 ```
 
-## 1. Direct Credentials (Simplest)
+## Authentication Methods
+
+### 1. Direct Credentials (Simplest)
 
 Pass API credentials directly as props:
 
@@ -113,7 +77,11 @@ function App() {
 }
 ```
 
-## 2. LocalStorage (Default Behavior)
+**Use Case:** Development, testing, demos
+
+---
+
+### 2. LocalStorage (Default Behavior)
 
 If no credentials are provided via props, the component will check `localStorage` and show a login form if credentials are missing:
 
@@ -138,9 +106,13 @@ function App() {
 }
 ```
 
-## 3. Backend Authentication (Custom Token Exchange)
+**Use Case:** Simple deployments where users manage their own credentials
 
-Use your own Express.js backend to manage credentials:
+---
+
+### 3. Backend Authentication (Recommended for Production)
+
+Use your own Express.js backend to manage credentials securely:
 
 ```tsx
 import { DQMSidebar } from '@crownpeak/dqm-react-component';
@@ -155,10 +127,10 @@ function App() {
       onOpen={() => setOpen(true)}
       config={{
         authBackendUrl: 'https://api.yourcompany.com',
-        useLocalStorage: true, // Optional: cache credentials
+        useLocalStorage: true, // Cache session token
       }}
       onAuthSuccess={(credentials) => {
-        console.log('Authenticated:', credentials);
+        console.log('Authenticated:', credentials.sessionType); // 'backend'
       }}
       onAuthError={(error) => {
         console.error('Auth failed:', error);
@@ -168,66 +140,31 @@ function App() {
 }
 ```
 
-### Backend API Requirements
+**Use Case:** Production deployments, centralized credential management
 
-Your backend must implement this endpoint:
+#### Backend API Requirements
 
-```typescript
-// POST /auth/token
-// Response:
-{
-  "apiKey": "your-dqm-api-key",
-  "websiteId": "your-website-id"
-}
-```
-
-## 4. OAuth2 Flow
-
-For enterprise SSO integration:
-
-```tsx
-import { DQMSidebar } from '@crownpeak/dqm-react-component';
-
-function App() {
-  const [open, setOpen] = useState(false);
-  
-  // TODO: verify that your backend supports OAuth2 token exchange
-
-  return (
-    <DQMSidebar
-      open={open}
-      onClose={() => setOpen(false)}
-      onOpen={() => setOpen(true)}
-      config={{
-        authBackendUrl: 'https://api.yourcompany.com',
-        oauth2Config: {
-          authUrl: 'https://oauth.yourcompany.com/authorize',
-          tokenUrl: 'https://oauth.yourcompany.com/token',
-          clientId: 'your-oauth-client-id',
-          redirectUri: window.location.origin + '/dqm/callback',
-          scope: 'dqm:read',
-        },
-      }}
-    />
-  );
-}
-```
-
-### OAuth2 Backend Requirements
-
-Your backend must implement:
+Your backend must implement these endpoints:
 
 ```typescript
-// POST /auth/oauth2/callback
-// Body: { code: string, redirectUri: string }
-// Response:
-{
-  "apiKey": "your-dqm-api-key",
-  "websiteId": "your-website-id"
-}
+// POST /auth/login
+// Body: { apiKey: string, websiteId: string }
+// Response: { sessionToken: string, websiteId: string }
+
+// POST /auth/logout
+// Headers: Authorization: Bearer <sessionToken>
+// Response: { success: true }
+
+// GET /auth/session
+// Headers: Authorization: Bearer <sessionToken>
+// Response: { valid: true, websiteId: string }
 ```
 
-## 5. Hybrid Configuration
+See [Backend API Guide](./BACKEND-API.md) for complete implementation details.
+
+---
+
+### 4. Hybrid Configuration
 
 Combine multiple authentication methods with priority:
 
@@ -252,21 +189,16 @@ function App() {
         
         // Priority 3: Backend authentication (fallback)
         authBackendUrl: 'https://api.yourcompany.com',
-        oauth2Config: {
-          authUrl: 'https://oauth.yourcompany.com/authorize',
-          tokenUrl: 'https://oauth.yourcompany.com/token',
-          clientId: 'your-oauth-client-id',
-          redirectUri: window.location.origin + '/dqm/callback',
-        },
       }}
       onAuthSuccess={(credentials) => {
-        // Optional: Send to analytics
-        analytics.track('DQM Auth Success');
+        console.log('Session type:', credentials.sessionType);
       }}
     />
   );
 }
 ```
+
+---
 
 ## Express.js Backend Example
 
@@ -274,95 +206,96 @@ Here's a complete Express.js backend example:
 
 ```typescript
 import express from 'express';
-import axios from 'axios';
+import crypto from 'crypto';
 
 const app = express();
 app.use(express.json());
 
-// Simple token exchange (custom session-based)
-app.post('/auth/token', async (req, res) => {
-  try {
-    // Verify user session (implement your own logic)
-    if (!req.session?.userId) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
+// In-memory session store (use Redis in production)
+const sessions = new Map();
 
-    // Fetch user's DQM credentials from your database
-    const user = await database.users.findById(req.session.userId);
-    
-    res.json({
-      apiKey: user.dqmApiKey,
-      websiteId: user.dqmWebsiteId,
+// POST /auth/login - Create session
+app.post('/auth/login', async (req, res) => {
+  const { apiKey, websiteId } = req.body;
+  
+  if (!apiKey || !websiteId) {
+    return res.status(400).json({
+      error: true,
+      message: 'Missing required fields: apiKey, websiteId'
     });
-  } catch (error) {
-    res.status(500).json({ error: 'Internal server error' });
   }
+  
+  // Create session token
+  const sessionToken = crypto.randomBytes(32).toString('hex');
+  sessions.set(sessionToken, {
+    apiKey,
+    websiteId,
+    expiresAt: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+  });
+  
+  res.json({ sessionToken, websiteId });
 });
 
-// OAuth2 callback handler
-app.post('/auth/oauth2/callback', async (req, res) => {
-  const { code, redirectUri } = req.body;
+// POST /auth/logout - Invalidate session
+app.post('/auth/logout', (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  sessions.delete(token);
+  res.json({ success: true });
+});
 
-  try {
-    // Exchange authorization code for tokens
-    const tokenResponse = await axios.post('https://oauth.yourcompany.com/token', {
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: redirectUri,
-      client_id: process.env.OAUTH_CLIENT_ID,
-      client_secret: process.env.OAUTH_CLIENT_SECRET,
-    });
-
-    const { access_token } = tokenResponse.data;
-
-    // Use access token to fetch user's DQM credentials
-    const userInfo = await axios.get('https://api.yourcompany.com/user/dqm-credentials', {
-      headers: { Authorization: `Bearer ${access_token}` },
-    });
-
-    res.json({
-      apiKey: userInfo.data.apiKey,
-      websiteId: userInfo.data.websiteId,
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'OAuth2 flow failed' });
+// GET /auth/session - Get session info
+app.get('/auth/session', (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const session = sessions.get(token);
+  
+  if (!session || session.expiresAt < Date.now()) {
+    return res.status(401).json({ valid: false });
   }
+  
+  res.json({
+    valid: true,
+    websiteId: session.websiteId,
+    sessionType: 'backend'
+  });
 });
 
-app.listen(3000, () => {
-  console.log('DQM Auth Backend running on port 3000');
-});
+app.listen(3001);
 ```
+
+---
 
 ## Security Best Practices
 
 1. **Never expose API keys in client-side code** for production
 2. **Use HTTPS** for all authentication endpoints
-3. **Implement CSRF protection** for OAuth2 flows
-4. **Validate redirect URIs** in OAuth2 configuration
-5. **Use short-lived sessions** and implement token refresh
-6. **Log authentication events** for security monitoring
-7. **Rate limit** authentication endpoints
+3. **Implement rate limiting** on authentication endpoints
+4. **Use short-lived sessions** (default: 24 hours)
+5. **Log authentication events** for security monitoring
+6. **Use Redis** for session storage in production (supports clustering)
+
+---
 
 ## TypeScript Support
 
 All configuration options are fully typed:
 
 ```tsx
-import type { DQMConfig, OAuth2Config } from '@crownpeak/dqm-react-component';
+import type { DQMConfig } from '@crownpeak/dqm-react-component';
 
 const config: DQMConfig = {
   apiKey: '...',
   websiteId: '...',
   authBackendUrl: '...',
-  oauth2Config: {
-    authUrl: '...',
-    tokenUrl: '...',
-    clientId: '...',
-    redirectUri: '...',
-    scope: 'dqm:read',
-  },
   useLocalStorage: true,
   apiEndpoint: 'https://api.crownpeak.net/dqm-cms/v1', // Optional: custom endpoint
 };
 ```
+
+---
+
+## See Also
+
+- [Backend API Guide](./BACKEND-API.md) - Complete backend implementation
+- [Server Documentation](./SERVER.md) - Built-in Express server
+- [API Reference](./API-REFERENCE.md) - Full TypeScript API
+- [Examples](./EXAMPLES.md) - Integration examples

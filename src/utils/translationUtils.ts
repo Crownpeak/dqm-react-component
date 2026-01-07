@@ -1,3 +1,8 @@
+/**
+ * Translation utilities for DQM results.
+ * Supports translating checkpoint data via any JsonChatClient (e.g., OpenAI).
+ */
+
 import type { AnalysisData, Checkpoint } from '../types';
 import type { JsonChatClient } from './aiJsonClient';
 import type { TranslationCache } from './translationCache';
@@ -7,12 +12,6 @@ import {
   makeCheckpointKey,
   makeLabelKey,
 } from './translationCache';
-
-export type WebLLMInitProgress = {
-  progress: number;
-  text: string;
-  timeElapsed: number;
-};
 
 export type SummaryStats = {
   chunked: boolean;
@@ -24,221 +23,6 @@ export type SummaryStats = {
   modelId?: string;
   targetLang?: string;
   durationMs: number;
-};
-
-export type WebLLMEngine = {
-  unload: () => Promise<void>;
-  interruptGenerate: () => void;
-  terminate?: () => void;
-  resetChat?: (keepStats?: boolean) => Promise<void> | void;
-  chat: {
-    completions: {
-      create: (request: {
-        messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
-        temperature?: number | null;
-        top_p?: number | null;
-        max_tokens?: number | null;
-        response_format?: { type?: 'text' | 'json_object' | 'grammar'; schema?: string } | null;
-        enable_thinking?: boolean | null;
-      }) => Promise<{
-        choices?: Array<{ message?: { content?: string | null } }>;
-      }>;
-    };
-  };
-};
-
-type WebLLMModule = {
-  CreateMLCEngine: (
-    modelId: string | string[],
-    engineConfig?: { initProgressCallback?: (report: WebLLMInitProgress) => void; logLevel?: string; appConfig?: any },
-  ) => Promise<WebLLMEngine>;
-  CreateWebWorkerMLCEngine?: (
-    worker: any,
-    modelId: string | string[],
-    engineConfig?: { appConfig?: any; initProgressCallback?: (report: WebLLMInitProgress) => void; logLevel?: string },
-  ) => Promise<WebLLMEngine>;
-  prebuiltAppConfig: {
-    model_list: Array<{
-      model_id: string;
-      vram_required_MB?: number;
-      model_type?: number;
-      low_resource_required?: boolean;
-    }>;
-  };
-  ModelType: { LLM: number; embedding: number; VLM: number };
-  hasModelInCache?: (modelId: string) => Promise<boolean> | boolean;
-  deleteChatConfigInCache?: (modelId: string) => Promise<void> | void;
-  deleteModelAllInfoInCache?: (modelId: string) => Promise<void> | void;
-  deleteModelWasmInCache?: (modelId: string) => Promise<void> | void;
-  deleteModelInCache?: (modelId: string) => Promise<void> | void;
-};
-
-export const isWebGPUSupported = (): boolean =>
-  typeof navigator !== 'undefined' && 'gpu' in navigator;
-
-export const createWebLLMJsonClient = (engine: WebLLMEngine): JsonChatClient => ({
-  chatJson: async ({ system, user, maxTokens, schema, resetChat, signal }) => {
-    const abortHandler = () => engine.interruptGenerate();
-    signal?.addEventListener('abort', abortHandler, { once: true });
-    try {
-      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-      if (resetChat && engine.resetChat) {
-        try {
-          await engine.resetChat(true);
-        } catch {
-          // ignore
-        }
-      }
-      const send = async (forceTextSchema: boolean) => {
-        return await engine.chat.completions.create({
-          messages: [
-            forceTextSchema
-              ? { role: 'system', content: schema ? `${system}\n\nSchema (JSON): ${schema}` : system }
-              : { role: 'system', content: system },
-            { role: 'user', content: user },
-          ],
-          temperature: 0,
-          top_p: 1,
-          max_tokens: maxTokens,
-          enable_thinking: false,
-          response_format: forceTextSchema
-            ? undefined
-            : (schema ? { type: 'json_object', schema } : undefined),
-        });
-      };
-
-      let response;
-      try {
-        response = await send(false);
-      } catch (err) {
-        // Fallback to text schema if GrammarMatcher/formatting fails.
-        response = await send(true);
-      }
-      return {
-        content: response.choices?.[0]?.message?.content ?? '',
-        finishReason: (response as any)?.choices?.[0]?.finish_reason ?? null,
-      };
-    } finally {
-      signal?.removeEventListener('abort', abortHandler);
-    }
-  },
-  reset: async (keepStats?: boolean) => {
-    if (!engine.resetChat) return;
-    await engine.resetChat(keepStats);
-  },
-  interrupt: () => engine.interruptGenerate(),
-});
-
-export const pickDefaultTranslationModelId = (webllm: WebLLMModule): string => {
-  const { prebuiltAppConfig, ModelType } = webllm;
-  const candidates = prebuiltAppConfig.model_list
-    .filter((model) => (model.model_type ?? ModelType.LLM) === ModelType.LLM)
-    .filter((model) => /instruct/i.test(model.model_id))
-    .sort((a, b) => (a.vram_required_MB ?? Number.POSITIVE_INFINITY) - (b.vram_required_MB ?? Number.POSITIVE_INFINITY));
-
-  const preferredOrder = [
-    'Llama-3.2-1B-Instruct-q4f16_1-MLC',
-    'Llama-3.2-3B-Instruct-q4f16_1-MLC',
-    'Phi-3.5-mini-instruct-q4f16_1-MLC-1k',
-  ];
-  for (const preferred of preferredOrder) {
-    const found = candidates.find((m) => m.model_id === preferred);
-    if (found) return found.model_id;
-  }
-
-  const chosen = candidates[0]?.model_id ?? prebuiltAppConfig.model_list[0]?.model_id;
-  if (!chosen) throw new Error('No WebLLM models available in prebuiltAppConfig');
-  return chosen;
-};
-
-const loadWebLLMModule = async (cdnUrl?: string): Promise<WebLLMModule> => {
-  // Try multiple JS endpoints to avoid bad MIME types from some CDNs/proxies.
-  const candidates = [
-    cdnUrl?.trim(),
-    'https://esm.sh/@mlc-ai/web-llm@latest?module',
-    'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/dist/index.js',
-  ].filter(Boolean) as string[];
-
-  for (const url of candidates) {
-    try {
-      return (await import(/* @vite-ignore */ url)) as unknown as WebLLMModule;
-    } catch {
-      // try next
-    }
-  }
-  // Fallback to bundled dependency if available.
-  return (await import('@mlc-ai/web-llm')) as unknown as WebLLMModule;
-};
-
-export const createWebLLMEngine = async (opts: {
-  modelId?: string;
-  onInitProgress?: (report: WebLLMInitProgress) => void;
-  useIndexedDBCache?: boolean;
-  webllmCdnUrl?: string;
-  useWebWorker?: boolean;
-}): Promise<{ engine: WebLLMEngine; modelId: string }> => {
-  const webllm = await loadWebLLMModule(opts.webllmCdnUrl);
-  const modelId = opts.modelId ?? pickDefaultTranslationModelId(webllm);
-  const baseAppConfig = {
-    ...webllm.prebuiltAppConfig,
-    useIndexedDBCache: opts.useIndexedDBCache ?? true,
-  };
-
-  const create = async () => {
-    if (opts.useWebWorker && webllm.CreateWebWorkerMLCEngine) {
-      const worker = new Worker(new URL('../workers/webllm.worker.ts', import.meta.url), { type: 'module' });
-      return await webllm.CreateWebWorkerMLCEngine(worker, modelId, {
-        appConfig: baseAppConfig,
-        initProgressCallback: opts.onInitProgress,
-        logLevel: 'WARN',
-      });
-    }
-    return await webllm.CreateMLCEngine(modelId, {
-      initProgressCallback: opts.onInitProgress,
-      logLevel: 'WARN',
-      appConfig: baseAppConfig,
-    });
-  };
-
-  try {
-    const engine = await create();
-    return { engine, modelId };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    // Workaround for WebLLM IndexedDB "ConstraintError: Key already exists" on some browsers when switching models.
-    if (/ConstraintError/i.test(message) && /Key already exists/i.test(message)) {
-      try {
-        // Treat as partially-cached/corrupt and clear model artifacts before retry.
-        await webllm.deleteChatConfigInCache?.(modelId);
-        await webllm.deleteModelWasmInCache?.(modelId);
-        await webllm.deleteModelInCache?.(modelId);
-        await webllm.deleteModelAllInfoInCache?.(modelId);
-      } catch {
-        // Ignore cache deletion failures; retry anyway.
-      }
-      try {
-        const engine = await create();
-        return { engine, modelId };
-      } catch (err2) {
-        const message2 = err2 instanceof Error ? err2.message : String(err2);
-        if (/ConstraintError/i.test(message2) && /Key already exists/i.test(message2)) {
-          // Last resort: fall back to Cache API for WebLLM model artifacts (translation cache still uses IndexedDB).
-          const fallbackAppConfig = { ...baseAppConfig, useIndexedDBCache: false };
-          const createFallback = async () => {
-            return await webllm.CreateMLCEngine(modelId, {
-              initProgressCallback: opts.onInitProgress,
-              logLevel: 'WARN',
-              appConfig: fallbackAppConfig,
-            });
-          };
-          const engine = await createFallback();
-          return { engine, modelId };
-        }
-        throw err2;
-      }
-    }
-    throw err;
-  }
 };
 
 const stripNextStepPrefix = (text: string): string => {
@@ -443,12 +227,6 @@ const translateJson = async <T,>(opts: {
         response = await client.chatJson({ system, user, maxTokens, schema, resetChat, signal });
       } catch (err) {
         const msg = err instanceof Error ? err.message.toLowerCase() : '';
-        // Handle device/resource exhaustion explicitly to avoid endless retries/aborts.
-        if (msg.includes('device lost') || msg.includes('context lost') || msg.includes('out of memory')) {
-          const friendly = new Error('Das lokale KI-Modell wurde gestoppt (GPU überlastet oder nicht mehr verfügbar). Bitte schließe andere GPU-lastige Tabs/Apps oder wechsle auf den OpenAI-Backend.');
-          (friendly as any).code = 'WEBGPU_DEVICE_LOST';
-          throw friendly;
-        }
         throw err;
       }
 
@@ -458,7 +236,7 @@ const translateJson = async <T,>(opts: {
 
       const content = response.content;
 
-      // Accept content even if finish_reason is "abort" (WebLLM quirk).
+      // Accept content even if finish_reason is "abort" (API quirk).
       if (!content || content.trim().length === 0) {
         lastError = new Error('Model returned empty response');
         (lastError as any).code = 'EMPTY_MODEL_RESPONSE';

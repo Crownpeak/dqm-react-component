@@ -1,7 +1,7 @@
 // DQM Sidebar React Component with MUI
 import React, {useCallback, useEffect, useState, useRef} from 'react';
 import {logger} from './utils/logger';
-import {useTranslation} from 'react-i18next';
+import {useTranslation, I18nextProvider} from 'react-i18next';
 import {Provider} from 'react-redux';
 import axios from 'axios';
 import {
@@ -18,20 +18,13 @@ import {
     Dialog,
     DialogContent,
     DialogTitle,
-    FormControlLabel,
-    FormControl,
     IconButton,
-    InputLabel,
     LinearProgress,
     List,
     ListItem,
-    MenuItem,
-    Select,
     Skeleton,
-    Switch,
     Tab,
     Tabs,
-    TextField,
     ThemeProvider,
     Tooltip,
     Typography,
@@ -65,13 +58,12 @@ import {AISummaryCard, CategoryCard, FailedCheckpointsCard, QualityOverviewCard}
 import {BrowserViewRenderer, SafeParsedHtml, ShadowDOMRenderer} from "./components/renderers";
 import {getCategoryColor} from "./utils/colors/GenerateCategoryColors";
 import {CircularProgressWithLabel, LanguageSwitch} from "./components/common";
-import './i18n';
-import {DQMLogin, OAuth2CallbackHandler} from "./components/auth";
+import i18n from './i18n';
+import {DQMLogin} from "./components/auth";
 import {getLocalStorageItem, removeLocalStorageItem, setLocalStorageItem} from "./utils/localStorage";
 import {useOverlayResistant} from "./utils/useDomPresence.tsx";
 import {HeaderButton} from "./components/sidebar/CloseButton.tsx";
 import {sanitizeHtmlDocument} from './utils/sanitizeHtmlDocument';
-import {isWebGPUSupported} from './utils/webllmTranslation';
 import {
     AIProvider,
     useAI,
@@ -79,12 +71,12 @@ import {
     useAISummary,
     useAITranslation,
     useTranslationCache,
-    type AiBackend,
 } from './context/ai';
+import { AISettingsDialog } from './components/modals/AISettingsDialog';
 import {store, useAppDispatch} from './store';
 import {
     setCredentials as setReduxCredentials,
-    setOAuthTokens,
+    setSessionToken as setReduxSessionToken,
     setAuthError as setReduxAuthError,
     logout as reduxLogout,
 } from './store/slices/authSlice';
@@ -176,15 +168,13 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
         translationEnabled, setTranslationEnabled,
         translationMode, setTranslationMode,
         summaryEnabled, setSummaryEnabled,
-        aiBackend, setAiBackend,
         openAiApiKey, setOpenAiApiKey,
         openAiModel, setOpenAiModel,
         openAiBaseUrl, setOpenAiBaseUrl,
-        aiModelPreset, setAiModelPreset,
         targetLang: translationTargetLang,
         translationNeeded,
         aiEnabled,
-        desiredModelId,
+        effectiveModelId,
         computeBudgetMs: translationComputeBudgetMsEffective,
     } = ai;
 
@@ -192,37 +182,25 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
     const cacheManager = useTranslationCache();
     const {
         cache: translationCache,
-        assetCache: cachedContentByAsset,
-        storagePersisted: translationStoragePersisted,
-        refreshStorageState: refreshPersistentStorageState,
         clearAll: clearTranslationCache,
         clearAssetCache,
     } = cacheManager;
 
-    // AI Engine (WebLLM / OpenAI)
+    // AI Engine (OpenAI)
     const translationEngine = useAIEngine({
         enabled: aiEnabled,
-        backend: aiBackend,
-        modelId: desiredModelId,
         openAiApiKey,
         openAiModel,
         openAiBaseUrl,
     });
     const {
-        client: aiClient,
         state: engineState,
-        loadedModelId: translationModelId,
-        initProgress: translationInitProgress,
         isReady: aiEngineReady,
-        runWithLock: runWithEngineLock,
-        stop: stopEngine,
     } = translationEngine;
 
     // Dedicated engine for summaries (always ChatGPT)
     const summaryEngine = useAIEngine({
         enabled: summaryEnabled,
-        backend: 'openai',
-        modelId: desiredModelId,
         openAiApiKey,
         openAiModel,
         openAiBaseUrl,
@@ -233,7 +211,7 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
         engine: summaryEngine,
         originalData: analysisDataOriginal,
         targetLang: translationTargetLang,
-        modelId: desiredModelId,
+        modelId: effectiveModelId,
         enabled: summaryEnabled,
         timeoutMs: config?.summary?.timeoutMs ?? 45000,
         cache: translationCache,
@@ -254,8 +232,7 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
         cacheManager,
         originalData: analysisDataOriginal,
         targetLang: translationTargetLang,
-        modelId: desiredModelId,
-        backend: aiBackend,
+        modelId: effectiveModelId,
         enabled: translationEnabled && translationNeeded,
         mode: translationMode,
         computeBudgetMs: translationComputeBudgetMsEffective,
@@ -265,11 +242,8 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
     const {
         translatedData,
         progress: translationProgress,
-        translatingIds,
-        translatedIds,
         restart: restartTranslation,
         stop: stopTranslation,
-        retrySingleCheckpoint,
     } = translation;
 
     // Compute translation state from engine state
@@ -284,8 +258,7 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
         return 'initializing' as const;
     }, [translationEnabled, engineState, translationProgress, aiEngineReady]);
     
-    const [openAiSettingsExpanded, setOpenAiSettingsExpanded] = useState<boolean>(summaryEnabled || aiBackend === 'openai');
-    const [localSettingsExpanded, setLocalSettingsExpanded] = useState<boolean>(aiBackend === 'local');
+    const [openAiSettingsExpanded, setOpenAiSettingsExpanded] = useState<boolean>(summaryEnabled);
 
     // Give summary absolute priority: stop translation when summary is generating/restarting.
     useEffect(() => {
@@ -297,12 +270,10 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
     // Translation error display
     const translationError = engineState === 'error' ? 'AI engine failed to initialize' : null;
 
-    // Effective model ID for display
+    // Effective model ID for display (always OpenAI)
     const aiModelIdEffective = React.useMemo(
-        () => (aiBackend === 'openai'
-            ? (openAiModel.trim() || 'gpt-4o-mini')
-            : (translationModelId ?? desiredModelId)),
-        [aiBackend, desiredModelId, openAiModel, translationModelId],
+        () => openAiModel.trim() || 'gpt-4.1-mini',
+        [openAiModel],
     );
 
     // Update analysis data when translation completes or is cleared
@@ -397,7 +368,7 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
                     });
                     setIsAuthenticated(true);
                     // Sync to Redux
-                    dispatch(setOAuthTokens({ accessToken: storedSessionToken }));
+                    dispatch(setReduxSessionToken({ accessToken: storedSessionToken }));
                     return;
                 }
             }
@@ -421,7 +392,7 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
         }
 
         // Priority 3: Check if authentication backend is configured
-        if (cfg?.authBackendUrl || cfg?.oauth2Config) {
+        if (cfg?.authBackendUrl) {
             setIsAuthenticated(false);
             setAnalysisState('idle');
             return;
@@ -455,7 +426,7 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
         // Sync to Redux store
         dispatch(setReduxCredentials({ apiKey: creds.apiKey, websiteId: creds.websiteId }));
         if (creds.sessionToken) {
-            dispatch(setOAuthTokens({ accessToken: creds.sessionToken }));
+            dispatch(setReduxSessionToken({ accessToken: creds.sessionToken }));
         }
 
         if (onAuthSuccess) {
@@ -1070,12 +1041,6 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
         }
     }, [open])
 
-    // Refresh persistent storage state when translation dialog is open
-    useEffect(() => {
-        if (!translationDialogOpen) return;
-        refreshPersistentStorageState();
-    }, [refreshPersistentStorageState, translationDialogOpen]);
-
     // Keep the checkpoint details panel in sync when switching between translated and original data.
     useEffect(() => {
         if (!analysisData || !currentCheckpointId) return;
@@ -1459,15 +1424,6 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
                             overflow: 'auto',
                         }}
                     >
-                        {/* OAuth2 Callback Handler */}
-                        {config?.oauth2Config && (
-                            <OAuth2CallbackHandler
-                                config={config}
-                                onAuthSuccess={handleAuthSuccess}
-                                onAuthError={handleAuthenticationError}
-                            />
-                        )}
-
                         {/* Header with Logo */}
                         <Box
                             sx={{
@@ -2167,34 +2123,6 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
                                                                                                         sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                                                                                                     >
                                                                                                         {checkpoint.name}
-                                                                                                        {translationState === 'translating' && aiBackend === 'local' && translatingIds.has(checkpoint.id) && (
-                                                                                                            <CircularProgress
-                                                                                                                size={16}
-                                                                                                                thickness={4}
-                                                                                                                sx={{
-                                                                                                                    color: 'text.secondary',
-                                                                                                                    animationDuration: '0.8s',
-                                                                                                                }}
-                                                                                                            />
-                                                                                                        )}
-                                                                                                       {aiBackend === 'local' && translatedIds.has(checkpoint.id) && (
-                                                                                                           <TaskAltIcon
-                                                                                                               fontSize="small"
-                                                                                                               color="success"
-                                                                                                               sx={{
-                                                                                                                   '@keyframes popIn': {
-                                                                                                                       from: { transform: 'scale(0.7)', opacity: 0 },
-                                                                                                                       to: { transform: 'scale(1)', opacity: 1 },
-                                                                                                                   },
-                                                                                                                   animation: 'popIn 0.25s ease-out',
-                                                                                                                    cursor: translationEnabled ? 'pointer' : 'default',
-                                                                                                               }}
-                                                                                                                onClick={(e) => {
-                                                                                                                    e.stopPropagation();
-                                                                                                                    retrySingleCheckpoint(checkpoint.id);
-                                                                                                                }}
-                                                                                                           />
-                                                                                                       )}
                                                                                                     </Typography>
                                                                                                 </Box>
                                                                                                 <Box display="flex"
@@ -2315,402 +2243,35 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
                             </Button>
                         </SidebarFooter>
 
-                        {/* Translation Settings (WebLLM) */}
-                        <Dialog
+                        {/* AI Settings Dialog */}
+                        <AISettingsDialog
                             open={translationDialogOpen}
                             onClose={() => setTranslationDialogOpen(false)}
-                            maxWidth="lg"
-                            fullWidth
-                            PaperProps={{ style: { borderRadius: 12 } }}
-                        >
-                            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Box display="flex" alignItems="center" gap={1}>
-                                    <AutoAwesomeIcon />
-                                    <Typography variant="h6" fontWeight={700}>
-                                        {t('sidebar:ai_settings', { defaultValue: 'AI Assistant' })}
-                                    </Typography>
-                                </Box>
-                                <IconButton
-                                    onClick={() => setTranslationDialogOpen(false)}
-                                    aria-label={t('sidebar:close')}
-                                >
-                                    <CloseIcon />
-                                </IconButton>
-                            </DialogTitle>
-                            <DialogContent dividers>
-                                <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap">
-                                    <FormControlLabel
-                                        control={
-                                            <Switch
-                                                checked={translationEnabled}
-                                                onChange={(_, checked) => {
-                                                    setTranslationEnabled(checked)
-                                                    if (!checked && aiBackend === 'openai') {
-                                                        setLocalSettingsExpanded(false);
-                                                    }
-                                                }}
-                                            />
-                                        }
-                                        label={t('sidebar:translation_enable', { defaultValue: 'Auto-translate DQM results' })}
-                                    />
-                                    <FormControl size="small" sx={{ minWidth: 180 }}>
-                                        <InputLabel id="dqm-translation-backend-label">
-                                            {t('sidebar:ai_backend_label', { defaultValue: 'Übersetzungs-Backend' })}
-                                        </InputLabel>
-                                        <Select
-                                            labelId="dqm-translation-backend-label"
-                                            value={aiBackend}
-                                            label={t('sidebar:ai_backend_label', { defaultValue: 'Übersetzungs-Backend' })}
-                                            onChange={(e) => {
-                                                setAiBackend(e.target.value as AiBackend)
-                                                if (e.target.value === 'openai') {
-                                                    setLocalSettingsExpanded(false);
-                                                    setOpenAiSettingsExpanded(true);
-                                                } else if (e.target.value === 'local') {
-                                                    if (!translationEnabled) setOpenAiSettingsExpanded(false);
-                                                    setLocalSettingsExpanded(true);
-                                                }
-                                            }}
-                                            MenuProps={{ disablePortal: true }}
-                                            size="small"
-                                        >
-                                            <MenuItem value="openai">
-                                                <Box display="flex" alignItems="center" gap={1}>
-                                                    {t('sidebar:ai_backend_api', { defaultValue: 'ChatGPT (API)' })}
-                                                    <Chip size="small" color="success" label="API" sx={{ height: 18, fontSize: '0.65rem' }} />
-                                                </Box>
-                                            </MenuItem>
-                                            <MenuItem value="local">
-                                                <Box display="flex" alignItems="center" gap={1}>
-                                                    {t('sidebar:ai_backend_local', { defaultValue: 'Local' })}
-                                                    <Chip size="small" color="warning" label="Beta" sx={{ height: 18, fontSize: '0.65rem' }} />
-                                                </Box>
-                                            </MenuItem>
-                                        </Select>
-                                    </FormControl>
-                                </Box>
-                                <FormControlLabel
-                                    control={
-                                        <Switch
-                                            checked={summaryEnabled}
-                                            onChange={(_, checked) => {
-                                                setSummaryEnabled(checked);
-                                                if (checked) restartSummary();
-                                                if (!checked && aiBackend === 'local') {
-                                                    setOpenAiSettingsExpanded(false);
-                                                }
-                                            }}
-                                        />
-                                    }
-                                    label={t('sidebar:summary_enable', { defaultValue: 'AI summary card' })}
-                                />
-
-                                {/* Accordion: ChatGPT settings */}
-                                <Accordion
-                                    defaultExpanded={summaryEnabled || aiBackend === 'openai'}
-                                    expanded={openAiSettingsExpanded} onChange={(_, expanded) => setOpenAiSettingsExpanded(expanded)}
-                                    sx={{
-                                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                                        '&:before': {display: 'none'},
-                                    }}>
-                                    <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
-                                        <Box display="flex" alignItems="center" gap={1}>
-                                            <Chip size="small" color="success" label="API" sx={{ height: 18, fontSize: '0.65rem' }} />
-                                            <Typography fontWeight={700}>{t('sidebar:ai_backend_api', { defaultValue: 'ChatGPT (API)' })}</Typography>
-                                            {summaryEnabled && (
-                                                <Chip size="small" color="primary" label={t('sidebar:summary_label', { defaultValue: 'Summary' })} sx={{ height: 18, fontSize: '0.65rem' }} />
-                                            )}
-                                        </Box>
-                                    </AccordionSummary>
-                                    <AccordionDetails>
-                                        <Box display="flex" flexDirection="column" gap={1.5}>
-                                            <Alert severity="info" sx={{ mb: 1 }}>
-                                                {t('sidebar:summary_api_only', {
-                                                    defaultValue: 'Summaries nutzen immer ChatGPT. Übersetzungen können optional ChatGPT oder lokal nutzen.',
-                                                })}
-                                            </Alert>
-                                            <FormControl fullWidth size="small">
-                                                <InputLabel id="dqm-openai-model-label">
-                                                    {t('sidebar:openai_model', { defaultValue: 'OpenAI model' })}
-                                                </InputLabel>
-                                                <Select
-                                                    labelId="dqm-openai-model-label"
-                                                    value={openAiModel}
-                                                    label={t('sidebar:openai_model', { defaultValue: 'OpenAI model' })}
-                                                    MenuProps={{ disablePortal: true }}
-                                                    onChange={(e) => setOpenAiModel(String(e.target.value))}
-                                                >
-                                                    <MenuItem value="gpt-4o-mini">gpt-4o-mini</MenuItem>
-                                                    <MenuItem value="gpt-4o">gpt-4o</MenuItem>
-                                                    <MenuItem value="gpt-4.1-mini">gpt-4.1-mini</MenuItem>
-                                                    <MenuItem value="gpt-4.1">gpt-4.1</MenuItem>
-                                                </Select>
-                                            </FormControl>
-                                            <Box display="flex" gap={1} flexWrap="wrap">
-                                                <Box flex={1} minWidth={260}>
-                                                    <TextField
-                                                        size="small"
-                                                        fullWidth
-                                                        value={openAiBaseUrl}
-                                                        onChange={(e) => setOpenAiBaseUrl(e.target.value)}
-                                                        label={t('sidebar:openai_base_url', { defaultValue: 'OpenAI base URL' })}
-                                                        placeholder="https://api.openai.com/v1"
-                                                        inputProps={{ spellCheck: false }}
-                                                    />
-                                                </Box>
-                                                <Box flex={1} minWidth={260}>
-                                                    <TextField
-                                                        size="small"
-                                                        fullWidth
-                                                        type="password"
-                                                        value={openAiApiKey}
-                                                        onChange={(e) => setOpenAiApiKey(e.target.value)}
-                                                        label={t('sidebar:openai_api_key', { defaultValue: 'OpenAI API key' })}
-                                                        placeholder="sk-..."
-                                                        inputProps={{ spellCheck: false, autoComplete: 'off' }}
-                                                    />
-                                                </Box>
-                                            </Box>
-                                        </Box>
-                                    </AccordionDetails>
-                                </Accordion>
-
-                                {/* Accordion: Local settings (only shown when translation can be local) */}
-                                {(translationEnabled || aiBackend === 'local') && (
-                                    <Accordion
-                                        defaultExpanded={aiBackend === 'local'}
-                                        expanded={localSettingsExpanded} onChange={(_, expanded) => setLocalSettingsExpanded(expanded)}
-                                        sx={{
-                                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                                            '&:before': {display: 'none'},
-                                        }}>
-                                        <AccordionSummary expandIcon={<ExpandMoreIcon/>}>
-                                            <Box display="flex" alignItems="center" gap={1}>
-                                                <Chip size="small" color="warning" label="Beta" sx={{ height: 18, fontSize: '0.65rem' }} />
-                                                <Typography fontWeight={700}>{t('sidebar:ai_backend_local', { defaultValue: 'Local' })}</Typography>
-                                            </Box>
-                                        </AccordionSummary>
-                                        <AccordionDetails>
-                                            <Box display="flex" flexDirection="column" gap={1.5}>
-                                                <Alert severity="warning" sx={{ mb: 1 }}>
-                                                    {t('sidebar:ai_local_beta', {
-                                                        defaultValue: 'Lokale KI (Beta): kann buggy, langsam oder ungenau sein und viel GPU/CPU/RAM verbrauchen. Läuft dafür lokal/datenschutzfreundlich.',
-                                                    })}
-                                                </Alert>
-                                                <FormControl fullWidth size="small">
-                                                    <InputLabel id="dqm-ai-model-label">
-                                                        {t('sidebar:ai_model_label', { defaultValue: 'AI model' })}
-                                                    </InputLabel>
-                                                    <Select
-                                                        labelId="dqm-ai-model-label"
-                                                        value={config?.translation?.modelId ? 'configured' : aiModelPreset}
-                                                        label={t('sidebar:ai_model_label', { defaultValue: 'AI model' })}
-                                                        disabled={!!config?.translation?.modelId}
-                                                        MenuProps={{
-                                                            disablePortal: true,
-                                                        }}
-                                                        onChange={(e) => setAiModelPreset(e.target.value as any)}
-                                                    >
-                                                        <MenuItem value="fast">
-                                                            {t('sidebar:ai_model_fast', { defaultValue: 'Fast (small, quickest)' })}
-                                                        </MenuItem>
-                                                        <MenuItem value="simple">
-                                                            {t('sidebar:ai_model_simple', { defaultValue: 'Simple (very small)' })}
-                                                        </MenuItem>
-                                                        <MenuItem value="reliable">
-                                                            {t('sidebar:ai_model_reliable', { defaultValue: 'Reliable (balanced)' })}
-                                                        </MenuItem>
-                                                        <MenuItem value="accurate">
-                                                            {t('sidebar:ai_model_accurate', { defaultValue: 'Accurate (stronger, slower)' })}
-                                                        </MenuItem>
-                                                        {config?.translation?.modelId && (
-                                                            <MenuItem value="configured">
-                                                                {t('sidebar:ai_model_configured', { defaultValue: 'Configured by host app' })}
-                                                            </MenuItem>
-                                                        )}
-                                                    </Select>
-                                                </FormControl>
-                                                {aiBackend === 'local' && !isWebGPUSupported() && (
-                                                    <Alert severity="warning" sx={{ mt: 1 }}>
-                                                        {t('sidebar:translation_webgpu_required', { defaultValue: 'Translation requires a WebGPU-capable browser.' })}
-                                                    </Alert>
-                                                )}
-                                            </Box>
-                                        </AccordionDetails>
-                                    </Accordion>
-                                )}
-
-                                {aiBackend === 'local' && !isWebGPUSupported() && (
-                                    <Alert severity="warning" sx={{ mt: 2 }}>
-                                        {t('sidebar:translation_webgpu_required', { defaultValue: 'Translation requires a WebGPU-capable browser.' })}
-                                    </Alert>
-                                )}
-
-                                {(translationEnabled || summaryEnabled) && (
-                                    <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            {t('sidebar:translation_when', {
-                                                defaultValue: 'Translation runs automatically after an analysis completes, when you change the UI language, or when you enable this toggle.',
-                                            })}
-                                        </Typography>
-                                        <Typography variant="caption" color="text.secondary">
-                                            {t('sidebar:ai_limitations', {
-                                                defaultValue: 'AI kann sich irren oder halluzinieren – bitte Ergebnisse prüfen.',
-                                            })}
-                                        </Typography>
-                                        {translationEnabled && !translationNeeded && (
-                                            <Alert severity="info">
-                                                {t('sidebar:translation_not_needed', { defaultValue: 'UI language is English; translation is not needed.' })}
-                                            </Alert>
-                                        )}
-                                        <Alert severity="info" sx={{ mt: 1 }}>
-                                            {t('sidebar:summary_api_only', {
-                                                defaultValue: 'Hinweis: Zusammenfassung nutzt immer ChatGPT (API). Übersetzungen können lokal oder via API laufen.',
-                                            })}
-                                        </Alert>
-
-                                        <Typography variant="caption" color="text.secondary">
-                                            {t('sidebar:ai_model_hint', {
-                                                defaultValue: 'Model choice affects translation and summary quality/speed.',
-                                            })}
-                                        </Typography>
-
-                                        <FormControlLabel
-                                            control={
-                                                <Switch
-                                                    checked={translationMode === 'full'}
-                                                    onChange={(_, checked) => setTranslationMode(checked ? 'full' : 'fast')}
-                                                />
-                                            }
-                                            label={t('sidebar:translation_full_power', { defaultValue: 'Full translation (may take longer)' })}
-                                        />
-                                        <Typography variant="body2" color="text.secondary">
-                                            {t('sidebar:translation_target_lang', {
-                                                defaultValue: 'Target language: {{lang}}',
-                                                lang: translationTargetLang,
-                                            })}
-                                        </Typography>
-
-                                        {aiModelIdEffective && (
-                                            <Typography variant="caption" color="text.secondary">
-                                                {t('sidebar:translation_model', {
-                                                    defaultValue: 'Model: {{model}}',
-                                                    model: aiModelIdEffective,
-                                                })}
-                                            </Typography>
-                                        )}
-
-                                        {translationState === 'initializing' && (
-                                            <>
-                                                <Typography variant="body2" fontWeight={600}>
-                                                    {t('sidebar:translation_downloading')}
-                                                </Typography>
-                                                <LinearProgress
-                                                    variant={translationInitProgress ? 'determinate' : 'indeterminate'}
-                                                    value={translationInitProgress ? translationInitProgress.progress * 100 : undefined}
-                                                />
-                                                {translationInitProgress?.text && (
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        {translationInitProgress.text}
-                                                    </Typography>
-                                                )}
-                                            </>
-                                        )}
-
-                                        {translationState === 'translating' && (
-                                            <>
-                                                <Typography variant="body2" fontWeight={600}>
-                                                    {t('sidebar:translation_translating')}
-                                                </Typography>
-                                                <LinearProgress
-                                                    variant={translationProgress ? 'determinate' : 'indeterminate'}
-                                                    value={
-                                                        translationProgress && translationProgress.totalCheckpoints > 0
-                                                            ? (translationProgress.translatedCheckpoints / translationProgress.totalCheckpoints) * 100
-                                                            : undefined
-                                                    }
-                                                />
-                                                {translationProgress && (
-                                                    <Typography variant="caption" color="text.secondary">
-                                                {t('sidebar:translation_progress', {
-                                                            done: translationProgress.translatedCheckpoints,
-                                                            total: translationProgress.totalCheckpoints,
-                                                        })}
-                                                    </Typography>
-                                                )}
-                                            </>
-                                        )}
-
-                                        {translationState === 'ready' && (
-                                            <Alert severity="success">
-                                                {t('sidebar:translation_ready')}
-                                            </Alert>
-                                        )}
-
-                                        {translationError && (
-                                            <Alert severity={translationState === 'error' ? 'error' : 'info'}>
-                                                {translationError}
-                                            </Alert>
-                                        )}
-
-                                        <Box display="flex" justifyContent="space-between" alignItems="center" gap={1} flexWrap="wrap">
-                                            {aiBackend === 'local' && translationStoragePersisted === false ? (
-                                                <Button
-                                                    variant="outlined"
-                                                    onClick={async () => {
-                                                        try {
-                                                            const granted = await (navigator as any).storage?.persist?.();
-                                                            // Refresh the storage state to reflect the new permission
-                                                            await refreshPersistentStorageState();
-                                                            if (granted !== true) {
-                                                                logger.warn('Persistent storage was not granted');
-                                                            }
-                                                        } catch {
-                                                            logger.error('Failed to request persistent storage');
-                                                        }
-                                                    }}
-                                                    disabled={typeof navigator === 'undefined' || !(navigator as any).storage?.persist}
-                                                    sx={{ textTransform: 'none' }}
-                                                >
-                                                {t('sidebar:translation_request_persistent_storage')}
-                                                </Button>
-                                            ) : (
-                                                <Box sx={{ width: 1 }} />
-                                            )}
-                                            <Button
-                                                variant="outlined"
-                                                color="warning"
-                                                onClick={clearTranslationCache}
-                                                sx={{ textTransform: 'none' }}
-                                            >
-                                                {t('sidebar:ai_cache_clear')}
-                                            </Button>
-                                            <Button
-                                                variant="outlined"
-                                                startIcon={<ReplayIcon />}
-                                                onClick={restartTranslation}
-                                                disabled={!analysisDataOriginal || !translationEnabled || translationState === 'initializing'}
-                                                sx={{ textTransform: 'none' }}
-                                            >
-                                                {t('sidebar:translation_restart')}
-                                            </Button>
-                                            <Button
-                                                variant="outlined"
-                                                startIcon={<ReplayIcon />}
-                                                onClick={restartSummary}
-                                                disabled={!analysisDataOriginal || !summaryEnabled}
-                                                sx={{ textTransform: 'none' }}
-                                            >
-                                                {t('sidebar:summary_restart')}
-                                            </Button>
-                                            <Button onClick={() => setTranslationDialogOpen(false)} sx={{ textTransform: 'none' }}>
-                                                {t('sidebar:close')}
-                                            </Button>
-                                        </Box>
-                                    </Box>
-                                )}
-                            </DialogContent>
-                        </Dialog>
+                            translationEnabled={translationEnabled}
+                            setTranslationEnabled={setTranslationEnabled}
+                            translationMode={translationMode}
+                            setTranslationMode={setTranslationMode}
+                            translationTargetLang={translationTargetLang}
+                            translationNeeded={translationNeeded}
+                            summaryEnabled={summaryEnabled}
+                            setSummaryEnabled={setSummaryEnabled}
+                            restartSummary={restartSummary}
+                            openAiApiKey={openAiApiKey}
+                            setOpenAiApiKey={setOpenAiApiKey}
+                            openAiModel={openAiModel}
+                            setOpenAiModel={setOpenAiModel}
+                            openAiBaseUrl={openAiBaseUrl}
+                            setOpenAiBaseUrl={setOpenAiBaseUrl}
+                            aiModelIdEffective={aiModelIdEffective}
+                            translationState={translationState}
+                            translationError={translationError}
+                            translationProgress={translationProgress}
+                            clearTranslationCache={clearTranslationCache}
+                            restartTranslation={restartTranslation}
+                            hasAnalysisData={!!analysisDataOriginal}
+                            openAiSettingsExpanded={openAiSettingsExpanded}
+                            setOpenAiSettingsExpanded={setOpenAiSettingsExpanded}
+                        />
 
                         {/* Highlighted Errors Modal */}
                         <Dialog
@@ -3098,17 +2659,19 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
     );
 };
 
-// Exported component that wraps DQMSidebarInner with Redux Provider and AIProvider
+// Exported component that wraps DQMSidebarInner with Redux Provider, I18nextProvider, and AIProvider
 export const DQMSidebar: React.FC<DQMSidebarProps> = (props) => {
     return (
-        <Provider store={store}>
-            <AIProvider
-                translationConfig={props.config?.translation}
-                summaryConfig={props.config?.summary}
-            >
-                <DQMSidebarInner {...props} />
-            </AIProvider>
-        </Provider>
+        <I18nextProvider i18n={i18n}>
+            <Provider store={store}>
+                <AIProvider
+                    translationConfig={props.config?.translation}
+                    summaryConfig={props.config?.summary}
+                >
+                    <DQMSidebarInner {...props} />
+                </AIProvider>
+            </Provider>
+        </I18nextProvider>
     );
 };
 

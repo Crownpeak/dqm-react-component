@@ -293,14 +293,6 @@ export const devBackendPlugin = () => {
                         return;
                     }
 
-                    if (pathname === '/auth/oauth2/callback' && method === 'POST') {
-                        sendJson(res, 501, {
-                            error: true,
-                            message: 'OAuth2 authentication not available. Please use /auth/login with API key and website ID.',
-                        });
-                        return;
-                    }
-
                     if (pathname === '/auth/token/validate' && method === 'POST') {
                         const body = await parseBody(req, res);
                         if (!body) return;

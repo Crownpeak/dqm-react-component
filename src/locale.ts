@@ -17,7 +17,7 @@ export interface ResolvedLocale {
  * Regional variants (de-AT, es-MX) fall back to their base language.
  * @see I18N.md for adding new languages
  */
-const SUPPORTED_LOCALES = ['en', 'de', 'es'] as const;
+export const SUPPORTED_LOCALES = ['en', 'de', 'es'] as const;
 export type SupportedLocale = typeof SUPPORTED_LOCALES[number];
 
 export const DEFAULT_LOCALE: SupportedLocale = 'en';

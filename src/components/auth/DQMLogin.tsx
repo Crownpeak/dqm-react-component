@@ -150,7 +150,7 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
                 }
 
                 // Return dummy credentials + session token
-                // Real API Key and Website ID are never exposed to client
+                // Real API Key and Website ID remain on the backend
                 onAuthSuccess({
                     apiKey: 'BACKEND_SESSION', // Placeholder
                     websiteId: data.websiteId || 'BACKEND_SESSION', // May return websiteId for display
@@ -186,8 +186,8 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
         }
     };
 
-    // Handle OAuth2 login - Redirect to backend login page
-    const handleOAuth2Login = () => {
+    // Handle backend login - Redirect to backend login page
+    const handleBackendLogin = () => {
         if (!config.authBackendUrl) {
             setError(t('auth:errors.backend_missing'));
             return;
@@ -297,7 +297,7 @@ export const DQMLogin: React.FC<DQMLoginProps> = ({
                 <Button
                     variant="contained"
                     startIcon={<LoginIcon />}
-                    onClick={handleOAuth2Login}
+                    onClick={handleBackendLogin}
                     disabled={loading}
                     fullWidth
                     size="large"
