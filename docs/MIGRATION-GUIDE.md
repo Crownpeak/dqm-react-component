@@ -28,13 +28,13 @@ Version 1.2.0 introduces powerful new features while maintaining full backward c
 ### Step 1: Update Package
 
 ```bash
-npm install @crownpeak/dqm-react-component@1.2.0
+npm install @crownpeak/dqm-react-component@^1.2.0
 ```
 
 Or with Yarn:
 
 ```bash
-yarn upgrade @crownpeak/dqm-react-component@1.2.0
+yarn upgrade @crownpeak/dqm-react-component@^1.2.0
 ```
 
 ### Step 2: Verify (No Changes Required)

@@ -163,12 +163,33 @@ async function build() {
 			console.log('Build cleanup is disabled via configuration.');
 		}
 
-		// Make the bin script executable
-		const binPath = path.join(rootDir, 'bin', 'mcp');
-		if (fs.existsSync(binPath)) {
-			await fs.chmod(binPath, 0o755);
-			console.log(`Made bin script executable: ${binPath}`);
-		}
+		// Create the bin directory and mcp executable script
+		const binDir = path.join(rootDir, 'bin');
+		const binPath = path.join(binDir, 'mcp');
+		await fs.ensureDir(binDir);
+		
+		// Create a simple wrapper that calls src/index.js
+		const binContent = `#!/usr/bin/env node
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+import { spawn } from 'child_process';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const indexPath = resolve(__dirname, '..', 'src', 'index.js');
+
+// Forward all arguments to the main script
+const child = spawn('node', [indexPath, ...process.argv.slice(2)], {
+	stdio: 'inherit',
+	env: process.env
+});
+
+child.on('exit', (code) => process.exit(code ?? 0));
+`;
+		
+		await fs.writeFile(binPath, binContent, 'utf-8');
+		await fs.chmod(binPath, 0o755);
+		console.log(`Created bin script: ${binPath}`)
 
 		// Count final files
 		const finalFiles = await glob('**/*', { cwd: dataDir, nodir: true, dot: true });

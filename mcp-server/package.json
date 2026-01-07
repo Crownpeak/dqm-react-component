@@ -1,13 +1,13 @@
 {
   "name": "@crownpeak/dqm-react-component-dev-mcp",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "MCP Server for Crownpeak DQM React Component documentation - powered by Probe",
   "author": "Crownpeak Technology GmbH",
   "license": "MIT",
   "type": "module",
   "main": "src/index.js",
   "bin": {
-    "dqm-dev-mcp": "bin/mcp"
+    "dqm-mcp": "./bin/mcp"
   },
   "files": [
     "bin",
