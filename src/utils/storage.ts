@@ -1,6 +1,8 @@
 // Storage utility using IndexedDB for large HTML content
 // IndexedDB has ~50% of available disk space limit (far exceeds localStorage's ~5-10MB)
 
+import { logger } from './logger';
+
 const DB_NAME = 'DQMTestStorage';
 const DB_VERSION = 1;
 const STORE_NAME = 'htmlContent';
@@ -47,7 +49,7 @@ export const saveHtmlToStorage = async (key: string, value: string): Promise<voi
       request.onerror = () => reject(request.error);
     });
   } catch (error) {
-    console.error('Failed to save HTML to IndexedDB:', error);
+    logger.error('Failed to save HTML to IndexedDB:', error);
     throw error;
   }
 };
@@ -69,7 +71,7 @@ export const loadHtmlFromStorage = async (key: string): Promise<string | null> =
       request.onerror = () => reject(request.error);
     });
   } catch (error) {
-    console.error('Failed to load HTML from IndexedDB:', error);
+    logger.error('Failed to load HTML from IndexedDB:', error);
     return null;
   }
 };
@@ -90,7 +92,7 @@ export const deleteHtmlFromStorage = async (key: string): Promise<void> => {
       request.onerror = () => reject(request.error);
     });
   } catch (error) {
-    console.error('Failed to delete HTML from IndexedDB:', error);
+    logger.error('Failed to delete HTML from IndexedDB:', error);
     throw error;
   }
 };

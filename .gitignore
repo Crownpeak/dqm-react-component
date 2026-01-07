@@ -49,6 +49,10 @@ Thumbs.db
 # Redis
 dump.rdb
 
+# Wiki build output (generated from docs/, not tracked)
+wiki/
+dqm-react-component.wiki/
+
 # Temporary files
 *.tmp
 *.temp
@@ -68,3 +72,10 @@ desktop.ini
 # Debug
 .vscode/launch.json
 /Caddyfile
+
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+playwright-report/
+test-results/

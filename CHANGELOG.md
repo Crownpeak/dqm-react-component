@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-07
+
+### Added
+- **Internationalization (i18n)**: Full multi-language support using i18next
+  - Supported languages: English (default), German, Spanish
+  - Language switcher component in sidebar footer
+  - URL parameter override (`?dqmUiLang=de`)
+  - Browser language auto-detection
+  - LocalStorage persistence of user preference (`dqm_locale`)
+  - Regional variant fallbacks (e.g., `de-AT` → `de` → `en`)
+- **New Exports**: 
+  - `i18n`, `resolveLanguage` from `./i18n`
+  - `SUPPORTED_LOCALES`, `DEFAULT_LOCALE`, `normalizeLocale` from `./locale`
+  - Types: `SupportedLocale`, `AvailableLanguage`
+- **Comprehensive i18n documentation** in `I18N.md`
+
 ## [1.1.0] - 2025-12-17
 
 ### Added

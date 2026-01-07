@@ -11,13 +11,15 @@ highlighting capabilities.
 
 ## 🌟 Features
 
+- **🤖 AI-Powered Translation & Summary** - Automatically translate analysis results into your language and generate intelligent summaries using OpenAI
 - **📊 Quality Analysis** - Comprehensive quality metrics and scores
 - **♿ Accessibility Checks** - WCAG compliance validation
 - **🎯 Error Highlighting** - Visual highlighting of issues in HTML
 - **🎨 Material-UI Design** - Beautiful, responsive sidebar interface
-- **🔐 OAuth 2.0 Authentication** - Secure Crownpeak SSO integration
+- **🔐 Secure Authentication** - Backend session management with secure credential storage
 - **⚡ Real-time Analysis** - Live quality assessment as you edit
 - **📱 Responsive** - Works on desktop, tablet, and mobile
+- **🌍 Internationalization** - Supports English, German, and Spanish
 - **🔧 TypeScript Support** - Full type definitions included
 
 ## 📦 Installation
@@ -63,19 +65,54 @@ function App() {
 export default App;
 ```
 
+### AI-Powered Translation & Summary (Quick Example)
+
+```typescript
+import {DQMSidebar} from '@crownpeak/dqm-react-component';
+
+<DQMSidebar
+    open={isOpen}
+    onClose={() => setIsOpen(false)}
+    onOpen={() => setIsOpen(true)}
+    config={{
+        websiteId: 'your-website-id',
+        apiKey: 'your-api-key',
+        // Enable AI Translation (API key via localStorage: dqm_openai_apiKey)
+        translation: {
+            enabledByDefault: true,
+            computeBudgetMs: 15000,   // 15s timeout for 'fast' mode
+        },
+        // Enable AI Summary (uses same OpenAI API key)
+        summary: {
+            timeoutMs: 30000,         // 30s timeout
+        }
+    }}
+/>
+```
+
+See **[AI Features Guide](./docs/AI-FEATURES.md)** for complete documentation including caching strategies and performance tuning.
+
 ## 📖 Documentation
 
-- **[Quick Start Guide](./QUICKSTART.md)** - Get up and running in 5 minutes
-- **[Examples](./EXAMPLES.md)** - Integration examples for React, Next.js, TypeScript
-- **[Authentication Guide](./AUTHENTICATION.md)** - OAuth 2.0 setup and configuration
-- **[Backend API](./BACKEND-API.md)** - API endpoints and usage
-- **[Development Guide](./DEVELOPMENT.md)** - Contributing and local development
-- **Standalone Widget** - Use the fully bundled widget via `/dist/dqm-widget.{esm.js,iife.js}` (see Quick Start and test
-  demos under `test/`)
+### Core Documentation
+- **[Quick Start Guide](./docs/QUICKSTART.md)** - Get up and running in 5 minutes
+- **[Examples](./docs/EXAMPLES.md)** - Integration examples for React, Next.js, TypeScript
+- **[Authentication Guide](./docs/AUTHENTICATION.md)** - Setup and configuration
+
+### AI Features
+- **[AI Features Guide](./docs/AI-FEATURES.md)** - Translation & Summary with OpenAI
+- **[API Reference](./docs/API-REFERENCE.md)** - Full TypeScript API documentation
+- **[Migration Guide](./docs/MIGRATION-GUIDE.md)** - Upgrade from v1.1 to v1.2
+
+### Advanced
+- **[Widget Guide](./docs/WIDGET-GUIDE.md)** - Standalone IIFE/ESM bundle usage
+- **[Backend API](./docs/BACKEND-API.md)** - Backend server endpoints and usage
+- **[Development Guide](./docs/DEVELOPMENT.md)** - Contributing and local development
+- **[Troubleshooting](./docs/TROUBLESHOOTING.md)** - Common issues and solutions
 
 ## 🔑 Authentication Setup
 
-The component requires authentication with Crownpeak DQM. 3 options are available:
+The component requires authentication with Crownpeak DQM. Two options are available:
 
 ```tsx
 import {DQMSidebar} from '@crownpeak/dqm-react-component';
@@ -83,22 +120,13 @@ import {DQMSidebar} from '@crownpeak/dqm-react-component';
 <DQMSidebar
     {/* ... */}
     config={{
-        // --  Direct API Key and Website ID (not recommended for production)
+        // Option 1: Direct API Key and Website ID (not recommended for production)
         // websiteId: 'your-website-id',
         // apiKey: 'your-api-key',
 
-        // -- Auth Backend for API Key management
-        authBackendUrl: 'http://localhost:3001',
+        // Option 2: Auth Backend for API Key management (recommended)
+        authBackendUrl: '', // Dev: empty (same origin) | Prod: 'https://your-backend.com'
         useLocalStorage: true,
-
-        // -- Oauth2:  backend not yet implemented ...
-        // oauth2Config: {
-        //     authUrl: 'https://dqm.crownpeak.com/oauth2/authorize',
-        //     clientId: 'crownpeak-dqm-react-component',
-        //     scope: 'dqm_api',
-        //     redirectUri: 'http://localhost:5173/',
-        //     tokenUrl: 'https://dqm.crownpeak.com/oauth2/token',
-        // }
     }}
 ```
 
@@ -123,10 +151,10 @@ npm run dev
 
 This starts:
 
-- Frontend on `http://localhost:5173`
-- Backend on `http://localhost:3001`
+- Frontend + Backend on `http://localhost:5173` (Vite dev server with integrated backend)
+- Backend routes (`/auth/*`, `/dqm/*`) handled by Vite plugin
 
-### Backend Requirements (Optional)
+### Standalone Server (Optional)
 
 If using the included backend server:
 

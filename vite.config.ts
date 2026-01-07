@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc"
 import {resolve} from 'path'
 import dts from 'vite-plugin-dts'
 import MagicString from 'magic-string'
+import {devBackendPlugin} from "./vite.server.ts";
 
 // Plugin to remove console.log in production builds
 const removeConsolePlugin = () => {
@@ -61,7 +62,7 @@ const removeConsolePlugin = () => {
 
             return {
                 code: s.toString(),
-                map: s.generateMap({ hires: true })
+                map: s.generateMap({hires: true})
             };
         }
     };
@@ -181,7 +182,8 @@ export default defineConfig(({mode}) => {
         plugins: [
             react({
                 jsxImportSource: '@emotion/react',
-            })
+            }),
+            devBackendPlugin()
         ],
         optimizeDeps: {
             include: [
@@ -199,21 +201,6 @@ export default defineConfig(({mode}) => {
         },
         server: {
             port: 5173,
-            proxy: {
-                // Proxy API requests to backend server
-                '/auth': {
-                    target: 'http://localhost:3001',
-                    changeOrigin: true,
-                },
-                '/dqm': {
-                    target: 'http://localhost:3001',
-                    changeOrigin: true,
-                },
-                '/assets': {
-                    target: 'http://localhost:3001',
-                    changeOrigin: true,
-                }
-            }
         }
     };
 })

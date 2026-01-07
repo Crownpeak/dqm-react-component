@@ -1,5 +1,6 @@
 // Component to render HTML in Shadow DOM for style isolation
 import React from "react";
+import { logger } from "../../utils/logger";
 
 export const ShadowDOMRenderer: React.FC<{
     html: string;
@@ -30,7 +31,7 @@ export const ShadowDOMRenderer: React.FC<{
             try {
                 shadowRootRef.current = containerRef.current.attachShadow({mode: 'open'});
             } catch (e) {
-                console.warn('[DQM] Could not attach shadow DOM, falling back to regular DOM', e);
+                logger.warn('Could not attach shadow DOM, falling back to regular DOM', e);
                 // Fallback: render directly in container
                 containerRef.current.innerHTML = html;
                 return;

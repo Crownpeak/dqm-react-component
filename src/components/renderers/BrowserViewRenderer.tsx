@@ -1,5 +1,8 @@
 // Component to render HTML in iframe for full browser view with styles
 import React from "react";
+import { useTranslation } from 'react-i18next';
+import { sanitizeHtmlDocument } from '../../utils/sanitizeHtmlDocument';
+import { logger } from '../../utils/logger';
 
 export const BrowserViewRenderer: React.FC<{
     html: string;
@@ -9,6 +12,7 @@ export const BrowserViewRenderer: React.FC<{
     onVisibleHighlightChange?: (index: number) => void; // Passive: only for display, never triggers scroll
     scriptsDisabled?: boolean;
 }> = ({html, currentHighlight, onHighlightsFound, onVisibleHighlightChange, clickedIndicator, scriptsDisabled = true}) => {
+    const { t } = useTranslation(['sidebar']);
     const iframeRef = React.useRef<HTMLIFrameElement>(null);
     const isProgrammaticScrollRef = React.useRef<boolean>(false);
 
@@ -19,17 +23,18 @@ export const BrowserViewRenderer: React.FC<{
         const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
 
         if (!iframeDoc) {
-            console.warn('[DQM] Could not access iframe document');
+            logger.warn('Could not access iframe document');
             return;
         }
 
         const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
+        const cleanedHtml = scriptsDisabled ? sanitizeHtmlDocument(html, { allowScripts: false }) : html;
+        const doc = parser.parseFromString(cleanedHtml, 'text/html');
 
         const documentElement = doc.documentElement;
 
         documentElement.getElementsByTagName('body')[0].style.overflow = 'auto'
-        console.log('[DQM] Set iframe body overflow to auto');
+        logger.debug('Set iframe body overflow to auto');
 
         // Write the HTML content to the iframe
         iframeDoc.open();
@@ -81,7 +86,7 @@ export const BrowserViewRenderer: React.FC<{
             ];
             const highlights = iframeDoc.querySelectorAll(highlightSelectors.join(', '));
 
-            console.log('[DQM] Browser View - Found highlights:', highlights.length);
+            logger.debug('Browser View - Found highlights:', highlights.length);
 
             // Count highlights and notify parent
             if (onHighlightsFound) {
@@ -164,16 +169,16 @@ export const BrowserViewRenderer: React.FC<{
 
         const highlights = iframeDoc.querySelectorAll(highlightSelectors.join(', '));
 
-        console.log('[DQM] iFrame scroll - currentHighlight:', currentHighlight, 'total highlights:', highlights.length);
+        logger.debug('iFrame scroll - currentHighlight:', currentHighlight, 'total highlights:', highlights.length);
 
         if (highlights.length === 0) {
-            console.warn('[DQM] No highlights found in iframe');
+            logger.warn('No highlights found in iframe');
             return;
         }
 
         const targetElement = highlights[currentHighlight - 1];
         if (targetElement) {
-            console.log('[DQM] Scrolling to highlight', currentHighlight, 'in iframe');
+            logger.debug('Scrolling to highlight', currentHighlight, 'in iframe');
 
             // Disable observer during programmatic scroll
             isProgrammaticScrollRef.current = true;
@@ -196,7 +201,7 @@ export const BrowserViewRenderer: React.FC<{
                 }
             }, 1000); // Wait for smooth scroll animation to complete
         } else {
-            console.warn('[DQM] Target element not found for highlight', currentHighlight);
+            logger.warn('Target element not found for highlight', currentHighlight);
         }
     }, [currentHighlight, onVisibleHighlightChange, clickedIndicator]);
 
@@ -204,7 +209,7 @@ export const BrowserViewRenderer: React.FC<{
         <>
             <iframe
                 ref={iframeRef}
-                title="Browser View"
+                title={t('sidebar:browser_view')}
                 style={{
                     width: '100%',
                     height: '600px',

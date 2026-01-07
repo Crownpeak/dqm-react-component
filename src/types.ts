@@ -10,15 +10,6 @@ export type AuthMode = 'props' | 'localStorage' | 'backend';
 // Session type - determines how API calls are made
 export type SessionType = 'direct' | 'backend'; // 'direct' = direct to DQM API, 'backend' = via proxy
 
-// OAuth2 Configuration
-export interface OAuth2Config {
-  authUrl: string;
-  tokenUrl: string;
-  clientId: string;
-  redirectUri: string;
-  scope?: string;
-}
-
 /**
  * Position for manual overlay offset configuration.
  * Specifies from which edge the offset should be applied.
@@ -89,15 +80,29 @@ export interface OverlayConfig {
   };
 }
 
+// Translation configuration
+export interface TranslationConfig {
+  /**
+   * Enable auto-translation by default (user can still toggle at runtime).
+   * Default: false
+   */
+  enabledByDefault?: boolean;
+
+  /**
+   * Translation compute budget in milliseconds.
+   * Default: 15000
+   */
+  computeBudgetMs?: number;
+}
+
 // DQM Configuration
 export interface DQMConfig {
   // Direct authentication (highest priority)
   apiKey?: string;
   websiteId?: string;
   
-  // Backend authentication (OAuth2 or custom)
+  // Backend authentication
   authBackendUrl?: string;
-  oauth2Config?: OAuth2Config;
   
   // Storage preference
   useLocalStorage?: boolean; // Default: true
@@ -132,6 +137,22 @@ export interface DQMConfig {
    * @see OverlayConfig for all available options
    */
   overlayConfig?: OverlayConfig;
+
+  /**
+   * Optional translation configuration for DQM API results.
+   */
+  translation?: TranslationConfig;
+
+  /**
+   * Optional AI summary configuration.
+   */
+  summary?: {
+    /**
+     * Timeout in milliseconds for summary generation.
+     * Default: 45000
+     */
+    timeoutMs?: number;
+  };
 }
 
 // DQM Modal Props Interface
@@ -193,3 +214,6 @@ export interface AnalysisData {
   totalErrors: number;
   checkpoints: Checkpoint[];
 }
+
+// Grouped categories with checkpoints (used for filtering and display)
+export type GroupedCategories = Record<string, Checkpoint[]>;

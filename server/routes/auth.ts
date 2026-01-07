@@ -70,17 +70,6 @@ authRouter.post('/token', async (req: Request, res: Response) => {
 });
 
 /**
- * POST /auth/oauth2/callback
- * DISABLED - Use /auth/login instead for direct credential authentication
- */
-authRouter.post('/oauth2/callback', async (req: Request, res: Response) => {
-  return res.status(501).json({
-    error: true,
-    message: 'OAuth2 authentication not available. Please use /auth/login with API key and website ID.',
-  });
-});
-
-/**
  * POST /auth/token/validate
  * Validate if a session token is still valid
  */

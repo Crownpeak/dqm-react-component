@@ -4,12 +4,19 @@ import {createRoot} from 'react-dom/client';
 import type {Theme} from '@mui/material/styles';
 import {createTheme, ThemeProvider} from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { I18nextProvider } from 'react-i18next';
+import { Provider } from 'react-redux';
 import {ErrorBoundary} from "../ErrorBoundary.tsx";
 // Emotion cache + provider for Shadow DOM style scoping
 import createCache from '@emotion/cache';
 import {CacheProvider} from '@emotion/react';
 import DQMSidebar from "../DQMSidebar.tsx";
 import type {DQMConfig} from "../types.ts";
+import i18n from '../i18n';
+import { logger } from '../utils/logger';
+import { store } from '../store';
+import { setResolvedLocale } from '../store/localeSlice';
+import { DEFAULT_LOCALE, loadSavedLocale, resolveLocale } from '../locale';
 
 // Re-export types for consumers
 export type {DQMConfig} from "../types.ts";
@@ -119,6 +126,30 @@ function setGlobalWidgetConfig(config: DQMWidgetConfig): void {
 }
 
 export const DQMWidget: React.FC<{ theme: Theme }> = ({theme}) => {
+    // Initialize locale & i18n (same as main app)
+    React.useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const detected = resolveLocale(window.location.search, loadSavedLocale(), navigator.language, DEFAULT_LOCALE);
+        store.dispatch(setResolvedLocale(detected));
+        i18n.changeLanguage(detected.locale);
+
+        const onLangChange = () => {
+            const state = store.getState().locale;
+            if (state.userOverride || state.source === 'url') return;
+            const next = resolveLocale(window.location.search, loadSavedLocale(), navigator.language, DEFAULT_LOCALE);
+            store.dispatch(setResolvedLocale(next));
+            i18n.changeLanguage(next.locale);
+        };
+        window.addEventListener('languagechange', onLangChange);
+        const unsub = store.subscribe(() => {
+            const current = store.getState().locale;
+            i18n.changeLanguage(current.locale);
+        });
+        return () => {
+            window.removeEventListener('languagechange', onLangChange);
+            unsub();
+        };
+    }, []);
     // Merge config sources: window.DQM_CONFIG < globalWidgetConfig (from initDQMWidget)
     // IMPORTANT: Always enable shadowDomMode for standalone widget to ensure styles work
     const config: DQMWidgetConfig = {
@@ -139,17 +170,21 @@ export const DQMWidget: React.FC<{ theme: Theme }> = ({theme}) => {
     const onClose = React.useCallback(() => setModalOpen(false), [setModalOpen]);
 
     return (
-        <ThemeProvider theme={theme}>
-            <CssBaseline/>
-            <ErrorBoundary>
-                <DQMSidebar
-                    open={modalOpen}
-                    onOpen={onOpen}
-                    onClose={onClose}
-                    config={config}
-                />
-            </ErrorBoundary>
-        </ThemeProvider>
+        <Provider store={store}>
+            <I18nextProvider i18n={i18n}>
+                <ThemeProvider theme={theme}>
+                    <CssBaseline/>
+                    <ErrorBoundary>
+                        <DQMSidebar
+                            open={modalOpen}
+                            onOpen={onOpen}
+                            onClose={onClose}
+                            config={config}
+                        />
+                    </ErrorBoundary>
+                </ThemeProvider>
+            </I18nextProvider>
+        </Provider>
     );
 };
 
@@ -400,7 +435,7 @@ function ensureShadowDom(): {
 export const initDQMWidget = (config?: DQMWidgetConfig, providedContainer?: HTMLElement): void => {
     // Guard against double initialization (idempotent)
     if ((window as any).__DQM_WIDGET_INITIALIZED) {
-        console.warn('[DQM] Widget already initialized – skipping duplicate call');
+        logger.warn('Widget already initialized – skipping duplicate call');
         return;
     }
 
@@ -411,7 +446,7 @@ export const initDQMWidget = (config?: DQMWidgetConfig, providedContainer?: HTML
     };
     setGlobalWidgetConfig(mergedConfig);
     
-    console.log('[DQM] Initializing widget...', mergedConfig.disabled ? '(disabled)' : '');
+    logger.debug('Initializing widget...', mergedConfig.disabled ? '(disabled)' : '');
 
     let reactContainer: HTMLElement;
     let cache: any | undefined;

@@ -1,5 +1,8 @@
 // DQM Sidebar React Component with MUI
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState, useRef} from 'react';
+import {logger} from './utils/logger';
+import {useTranslation, I18nextProvider} from 'react-i18next';
+import {Provider} from 'react-redux';
 import axios from 'axios';
 import {
     Accordion,
@@ -16,6 +19,7 @@ import {
     DialogContent,
     DialogTitle,
     IconButton,
+    LinearProgress,
     List,
     ListItem,
     Skeleton,
@@ -30,6 +34,7 @@ import {
     ArrowForward as ArrowForwardIcon,
     Close as CloseIcon,
     ExpandMore as ExpandMoreIcon,
+    AutoAwesome as AutoAwesomeIcon,
     Logout as LogoutIcon,
     OpenInNew as OpenInNewIcon,
     Refresh as RefreshIcon,
@@ -49,16 +54,49 @@ import {
     StyledDrawer,
     StyledFab
 } from "./components/sidebar";
-import {CategoryCard, FailedCheckpointsCard, QualityOverviewCard} from "./components/cards";
+import {AISummaryCard, CategoryCard, FailedCheckpointsCard, QualityOverviewCard} from "./components/cards";
 import {BrowserViewRenderer, SafeParsedHtml, ShadowDOMRenderer} from "./components/renderers";
 import {getCategoryColor} from "./utils/colors/GenerateCategoryColors";
-import {CircularProgressWithLabel} from "./components/common";
-import {DQMLogin, OAuth2CallbackHandler} from "./components/auth";
-import {getLocalStorageItem, removeLocalStorageItem} from "./utils/localStorage";
+import {CircularProgressWithLabel, LanguageSwitch} from "./components/common";
+import i18n from './i18n';
+import {DQMLogin} from "./components/auth";
+import {getLocalStorageItem, removeLocalStorageItem, setLocalStorageItem} from "./utils/localStorage";
 import {useOverlayResistant} from "./utils/useDomPresence.tsx";
 import {HeaderButton} from "./components/sidebar/CloseButton.tsx";
+import {sanitizeHtmlDocument} from './utils/sanitizeHtmlDocument';
+import {
+    AIProvider,
+    useAI,
+    useAIEngine,
+    useAISummary,
+    useAITranslation,
+    useTranslationCache,
+} from './context/ai';
+import { AISettingsDialog } from './components/modals/AISettingsDialog';
+import {store, useAppDispatch} from './store';
+import {
+    setCredentials as setReduxCredentials,
+    setSessionToken as setReduxSessionToken,
+    setAuthError as setReduxAuthError,
+    logout as reduxLogout,
+} from './store/slices/authSlice';
+import {
+    selectCheckpoint as setReduxCheckpoint,
+    setViewMode as setReduxViewMode,
+    openModal as reduxOpenModal,
+    closeModal as reduxCloseModal,
+    setTotalHighlights as setReduxTotalHighlights,
+    setCurrentHighlightIndex as setReduxCurrentHighlight,
+    setVisibleHighlightIndex as setReduxVisibleHighlight,
+    setScriptsDisabled as setReduxScriptsDisabled,
+    incrementClickIndicator as reduxIncrementClickIndicator,
+    setHighlightedContent as setReduxHighlightedContent,
+    setLoading as setReduxHighlightLoading,
+    cacheHighlight as reduxCacheHighlight,
+} from './store/slices/highlightSlice';
 
-export const DQMSidebar: React.FC<DQMSidebarProps> = ({
+// Inner component that uses the AI hooks (must be wrapped in AIProvider)
+const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
                                                           open,
                                                           onClose,
                                                           onOpen,
@@ -67,11 +105,16 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                           onAuthError,
                                                           debugHtml // DEBUG ONLY: custom HTML for testing
                                                       }) => {
+    const {t, i18n} = useTranslation(['sidebar', 'auth', 'common']);
+    const dispatch = useAppDispatch(); // Redux dispatch for state sync
     const [analysisState, setAnalysisState] = useState<AnalysisState>('idle');
     const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
+    const [analysisDataOriginal, setAnalysisDataOriginal] = useState<AnalysisData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [currentAssetId, setcurrentAssetId] = useState<string | null>(null);
+    const currentAssetIdRef = React.useRef<string | null>(null);
     const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+    const pollingIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
     const [groupedCategories, setGroupedCategories] = useState<[string, AnalysisData['checkpoints']][]>([]);
     const [authError, setAuthError] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -114,7 +157,141 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
     // State to toggle JavaScript execution in iframe
     const [scriptsDisabled, setScriptsDisabled] = useState<boolean>(true);
 
+    // AI Translation Dialog
+    const [translationDialogOpen, setTranslationDialogOpen] = useState<boolean>(false);
+
     const contentBoxRef = React.useRef<HTMLDivElement>(null);
+
+    // AI Context - Settings from Context (with localStorage sync)
+    const ai = useAI();
+    const {
+        translationEnabled, setTranslationEnabled,
+        translationMode, setTranslationMode,
+        summaryEnabled, setSummaryEnabled,
+        openAiApiKey, setOpenAiApiKey,
+        openAiModel, setOpenAiModel,
+        openAiBaseUrl, setOpenAiBaseUrl,
+        targetLang: translationTargetLang,
+        translationNeeded,
+        aiEnabled,
+        effectiveModelId,
+        computeBudgetMs: translationComputeBudgetMsEffective,
+    } = ai;
+
+    // Translation Cache (IndexedDB + in-memory)
+    const cacheManager = useTranslationCache();
+    const {
+        cache: translationCache,
+        clearAll: clearTranslationCache,
+        clearAssetCache,
+    } = cacheManager;
+
+    // AI Engine (OpenAI)
+    const translationEngine = useAIEngine({
+        enabled: aiEnabled,
+        openAiApiKey,
+        openAiModel,
+        openAiBaseUrl,
+    });
+    const {
+        state: engineState,
+        isReady: aiEngineReady,
+    } = translationEngine;
+
+    // Dedicated engine for summaries (always ChatGPT)
+    const summaryEngine = useAIEngine({
+        enabled: summaryEnabled,
+        openAiApiKey,
+        openAiModel,
+        openAiBaseUrl,
+    });
+
+    // AI Summary Hook
+    const summary = useAISummary({
+        engine: summaryEngine,
+        originalData: analysisDataOriginal,
+        targetLang: translationTargetLang,
+        modelId: effectiveModelId,
+        enabled: summaryEnabled,
+        timeoutMs: config?.summary?.timeoutMs ?? 45000,
+        cache: translationCache,
+    });
+    const {
+        state: summaryState,
+        bullets: summaryBullets,
+        error: summaryError,
+        stats: summaryStats,
+        restart: restartSummary,
+    } = summary;
+
+    const summaryBlockingTranslation = summaryEnabled && (summaryState === 'generating' || summaryState === 'idle');
+
+    // AI Translation Hook (waits while summary is generating/starting)
+    const translation = useAITranslation({
+        engine: translationEngine,
+        cacheManager,
+        originalData: analysisDataOriginal,
+        targetLang: translationTargetLang,
+        modelId: effectiveModelId,
+        enabled: translationEnabled && translationNeeded,
+        mode: translationMode,
+        computeBudgetMs: translationComputeBudgetMsEffective,
+        persistentCache: translationCache,
+        summaryGenerating: summaryBlockingTranslation,
+    });
+    const {
+        translatedData,
+        progress: translationProgress,
+        restart: restartTranslation,
+        stop: stopTranslation,
+    } = translation;
+
+    // Compute translation state from engine state
+    const translationState = React.useMemo(() => {
+        if (!translationEnabled) return 'disabled' as const;
+        if (engineState === 'initializing') return 'initializing' as const;
+        if (engineState === 'error') return 'error' as const;
+        if (translationProgress && translationProgress.translatedCheckpoints < translationProgress.totalCheckpoints) {
+            return 'translating' as const;
+        }
+        if (aiEngineReady) return 'ready' as const;
+        return 'initializing' as const;
+    }, [translationEnabled, engineState, translationProgress, aiEngineReady]);
+    
+    const [openAiSettingsExpanded, setOpenAiSettingsExpanded] = useState<boolean>(summaryEnabled);
+
+    // Give summary absolute priority: stop translation when summary is generating/restarting.
+    useEffect(() => {
+        if (summaryBlockingTranslation) {
+            stopTranslation();
+        }
+    }, [summaryBlockingTranslation, stopTranslation]);
+
+    // Translation error display
+    const translationError = engineState === 'error' ? 'AI engine failed to initialize' : null;
+
+    // Effective model ID for display (always OpenAI)
+    const aiModelIdEffective = React.useMemo(
+        () => openAiModel.trim() || 'gpt-4.1-mini',
+        [openAiModel],
+    );
+
+    // Update analysis data when translation completes or is cleared
+    useEffect(() => {
+        if (translationEnabled && translationNeeded && translatedData) {
+            // Apply translated data when translation is enabled and we have results
+            setAnalysisData(translatedData);
+        } else if (analysisDataOriginal && (!translationEnabled || !translationNeeded)) {
+            // Reset to original when translation is disabled or not needed
+            setAnalysisData(analysisDataOriginal);
+        }
+    }, [translatedData, translationEnabled, translationNeeded, analysisDataOriginal]);
+
+    // Helper to update currentAssetId with ref sync
+    const updateCurrentAssetId = useCallback((assetId: string | null) => {
+        currentAssetIdRef.current = assetId;
+        setcurrentAssetId(assetId);
+    }, []);
 
     // Track if we've already done the initial auto-scroll to first highlight
     const hasAutoScrolledRef = React.useRef<boolean>(false);
@@ -125,6 +302,13 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
     const overlayInfo = useOverlayResistant(config?.overlayConfig);
     const logoutDisabled = config?.disableLogout === true;
 
+    // Store config in ref to avoid re-running effects on config object changes
+    const configRef = useRef(config);
+    configRef.current = config;
+
+    // Track if auth has been initialized
+    const authInitializedRef = useRef(false);
+
     useEffect(() => {
         const params = new URLSearchParams(window?.location?.search);
         const dqmParam = params.get('dqm');
@@ -132,93 +316,96 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
         if (dqmParam === 'true') {
             onOpen();
         }
-    }, [window?.location?.search])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []) // Run once on mount only
 
-    // Initialize authentication on mount
+    // Initialize authentication on mount - RUNS ONCE
     useEffect(() => {
-        const initAuth = () => {
-            // Check if DQM is disabled
-            if (config?.disabled === true) {
-                setIsAuthenticated(false);
-                setAuthError('DQM is disabled. Permission denied.');
-                setAnalysisState('idle'); // Show login page with error
-                return;
-            }
+        // Skip if already initialized
+        if (authInitializedRef.current) return;
+        authInitializedRef.current = true;
 
-            // Priority 1: Props from config (direct credentials - always direct mode)
-            if (config?.apiKey && config?.websiteId) {
-                setCredentials({
-                    apiKey: config.apiKey,
-                    websiteId: config.websiteId,
-                });
-                setSessionType('direct');
-                setSessionToken(null);
-                setIsAuthenticated(true);
-                return;
-            }
+        const cfg = configRef.current;
 
-            // Priority 2: LocalStorage (check session type) - BROWSER ONLY
-            // SSR-safe: Check if we're in browser environment
-            if (typeof window !== 'undefined' && config?.useLocalStorage !== false) {
-                const storedSessionType = getLocalStorageItem('dqm_sessionType') as SessionType | null;
+        // Check if DQM is disabled
+        if (cfg?.disabled === true) {
+            setIsAuthenticated(false);
+            setAuthError(t('sidebar:dqm_disabled'));
+            setAnalysisState('idle'); // Show login page with error
+            dispatch(setReduxAuthError(t('sidebar:dqm_disabled')));
+            return;
+        }
 
-                // Backend session mode
-                if (storedSessionType === 'backend') {
-                    const storedSessionToken = getLocalStorageItem('dqm_sessionToken');
-                    if (storedSessionToken) {
-                        console.log('[DQM] Restoring backend session from localStorage');
-                        setSessionToken(storedSessionToken);
-                        setSessionType('backend');
-                        setCredentials({
-                            apiKey: 'BACKEND_SESSION',
-                            websiteId: 'BACKEND_SESSION',
-                        });
-                        setIsAuthenticated(true);
-                        return;
-                    }
-                }
+        // Priority 1: Props from config (direct credentials - always direct mode)
+        if (cfg?.apiKey && cfg?.websiteId) {
+            setCredentials({
+                apiKey: cfg.apiKey,
+                websiteId: cfg.websiteId,
+            });
+            setSessionType('direct');
+            setSessionToken(null);
+            setIsAuthenticated(true);
+            // Sync to Redux
+            dispatch(setReduxCredentials({ apiKey: cfg.apiKey, websiteId: cfg.websiteId }));
+            return;
+        }
 
-                // Direct mode
-                const storedApiKey = getLocalStorageItem('dqm_apiKey');
-                const storedWebsiteId = getLocalStorageItem('dqm_websiteID');
-                if (storedApiKey && storedWebsiteId) {
-                    console.log('[DQM] Restoring direct credentials from localStorage');
+        // Priority 2: LocalStorage (check session type) - BROWSER ONLY
+        // SSR-safe: Check if we're in browser environment
+        if (typeof window !== 'undefined' && cfg?.useLocalStorage !== false) {
+            const storedSessionType = getLocalStorageItem('dqm_sessionType') as SessionType | null;
+
+            // Backend session mode
+            if (storedSessionType === 'backend') {
+                const storedSessionToken = getLocalStorageItem('dqm_sessionToken');
+                if (storedSessionToken) {
+                    logger.debug('Restoring backend session from localStorage');
+                    setSessionToken(storedSessionToken);
+                    setSessionType('backend');
                     setCredentials({
-                        apiKey: storedApiKey,
-                        websiteId: storedWebsiteId,
+                        apiKey: 'BACKEND_SESSION',
+                        websiteId: 'BACKEND_SESSION',
                     });
-                    setSessionType('direct');
-                    setSessionToken(null);
                     setIsAuthenticated(true);
+                    // Sync to Redux
+                    dispatch(setReduxSessionToken({ accessToken: storedSessionToken }));
                     return;
                 }
             }
 
-            // Priority 3: Check if authentication backend is configured
-            if (config?.authBackendUrl || config?.oauth2Config) {
-                // Show login page with backend options
-                setIsAuthenticated(false);
-                setAnalysisState('idle');
+            // Direct mode
+            const storedApiKey = getLocalStorageItem('dqm_apiKey');
+            const storedWebsiteId = getLocalStorageItem('dqm_websiteID');
+            if (storedApiKey && storedWebsiteId) {
+                logger.debug('Restoring direct credentials from localStorage');
+                setCredentials({
+                    apiKey: storedApiKey,
+                    websiteId: storedWebsiteId,
+                });
+                setSessionType('direct');
+                setSessionToken(null);
+                setIsAuthenticated(true);
+                // Sync to Redux
+                dispatch(setReduxCredentials({ apiKey: storedApiKey, websiteId: storedWebsiteId }));
                 return;
             }
-
-            // Priority 4: No configuration available - still show login page
-            // but with error message about missing configuration
-            setIsAuthenticated(false);
-            setAuthError('DQM is not configured. Please provide API credentials via props, localStorage, or configure an authentication backend.');
-            setAnalysisState('idle'); // Keep idle so login page shows
-        };
-
-        initAuth();
-    }, [config]);
-
-    // Auto-start analysis when authenticated with credentials
-    useEffect(() => {
-        if (isAuthenticated && credentials && analysisState === 'idle') {
-            console.log('[DQM] Auto-starting analysis with available credentials');
-            startAnalysis();
         }
-    }, [isAuthenticated, credentials]);
+
+        // Priority 3: Check if authentication backend is configured
+        if (cfg?.authBackendUrl) {
+            setIsAuthenticated(false);
+            setAnalysisState('idle');
+            return;
+        }
+
+        // Priority 4: No configuration available - still show login page
+        // but with error message about missing configuration
+        setIsAuthenticated(false);
+        setAuthError(t('sidebar:dqm_not_configured'));
+        setAnalysisState('idle'); // Keep idle so login page shows
+        dispatch(setReduxAuthError(t('sidebar:dqm_not_configured')));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Run ONCE on mount only
 
     // Handle successful authentication
     const handleAuthSuccess = useCallback((creds: {
@@ -236,21 +423,30 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
         setIsAuthenticated(true);
         setAuthError(null);
 
+        // Sync to Redux store
+        dispatch(setReduxCredentials({ apiKey: creds.apiKey, websiteId: creds.websiteId }));
+        if (creds.sessionToken) {
+            dispatch(setReduxSessionToken({ accessToken: creds.sessionToken }));
+        }
+
         if (onAuthSuccess) {
             onAuthSuccess(creds);
         }
-    }, [onAuthSuccess]);
+    }, [onAuthSuccess, dispatch]);
 
     // Handle authentication error
     const handleAuthenticationError = useCallback((err: Error) => {
-        console.error('[DQM] Authentication error:', err);
+        logger.error('Authentication error:', err);
         setAuthError(err.message);
         setIsAuthenticated(false);
+
+        // Sync to Redux store
+        dispatch(setReduxAuthError(err.message));
 
         if (onAuthError) {
             onAuthError(err);
         }
-    }, [onAuthError]);
+    }, [onAuthError, dispatch]);
 
     // Logout handler
     const handleLogout = useCallback(() => {
@@ -260,29 +456,33 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
         setSessionType('direct');
         setIsAuthenticated(false);
 
+        // Sync to Redux store
+        dispatch(reduxLogout());
+
         // Clear localStorage if enabled - SSR-safe
         if (typeof window !== 'undefined' && config?.useLocalStorage !== false) {
             removeLocalStorageItem('dqm_apiKey');
             removeLocalStorageItem('dqm_websiteID');
             removeLocalStorageItem('dqm_sessionToken');
             removeLocalStorageItem('dqm_sessionType');
-            console.log('[DQMSidebar] Cleared localStorage on logout');
+            logger.debug('Cleared localStorage on logout');
         }
 
         // Reset analysis state
         setAnalysisState('idle');
         setAnalysisData(null);
         setError(null);
-        setcurrentAssetId(null);
+        updateCurrentAssetId(null);
 
         // Clear any polling intervals
-        if (pollingInterval) {
-            clearInterval(pollingInterval);
-            setPollingInterval(null);
+        if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
         }
+        setPollingInterval(null);
 
-        console.log('[DQMSidebar] User logged out');
-    }, [config?.useLocalStorage, pollingInterval]);
+        logger.debug('User logged out');
+    }, [config?.useLocalStorage, updateCurrentAssetId, dispatch]);
 
     // Navigation handler for highlights
     const navigateHighlight = useCallback((direction: 'next' | 'prev') => {
@@ -300,13 +500,22 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
         }
 
         setCurrentHighlight(index + 1); // Convert back to 1-based
+        dispatch(setReduxCurrentHighlight(index + 1)); // Sync to Redux
 
         // Reset visibleHighlight so next button click continues from this new position
         // (not from where the user last scrolled)
         setVisibleHighlight(0);
+        dispatch(setReduxVisibleHighlight(0)); // Sync to Redux
 
         setClickedIndicator(((prev) => prev + 1)); // Trigger scroll effect)
-    }, [currentHighlight, visibleHighlight, totalHighlights]);
+        dispatch(reduxIncrementClickIndicator()); // Sync to Redux
+    }, [currentHighlight, visibleHighlight, totalHighlights, dispatch]);
+
+    // Handler to close highlight modal (syncs with Redux)
+    const handleCloseHighlightModal = useCallback(() => {
+        setOpenHighlightModal(false);
+        dispatch(reduxCloseModal());
+    }, [dispatch]);
 
     // Reset highlight navigation when modal opens/closes
     useEffect(() => {
@@ -321,7 +530,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
     // Auto-scroll to first highlight when highlights are found
     useEffect(() => {
         if (totalHighlights > 0 && currentHighlight === 0) {
-            console.log('[DQM] Auto-setting currentHighlight to 1 (total highlights:', totalHighlights, ')');
+            logger.debug('Auto-setting currentHighlight to 1 (total highlights:', totalHighlights, ')');
             setCurrentHighlight(1);
         }
     }, [totalHighlights, currentHighlight]);
@@ -336,7 +545,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
 
     // Handle authentication errors
     const handleAuthError = useCallback((error: unknown) => {
-        console.error('[DQM] API authentication error:', error);
+        logger.error('API authentication error:', error);
         setIsAuthenticated(false);
         setAuthError('Authentication required. Please refresh the page.');
     }, []);
@@ -362,7 +571,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                 const elements = doc.querySelectorAll(selector);
                 elements.forEach(el => el.remove());
             } catch (e: any) {
-                console.warn('[DQM] Could not process selector:', selector, e.message);
+                logger.warn('Could not process selector:', selector, e.message);
             }
         });
 
@@ -374,11 +583,11 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
         const optimizedSize = optimized.length;
         const reduction = ((originalSize - optimizedSize) / originalSize * 100).toFixed(1);
 
-        console.log(`[DQM] HTML optimization: ${originalSize} → ${optimizedSize} bytes (${reduction}% reduction)`);
+        logger.debug(`HTML optimization: ${originalSize} → ${optimizedSize} bytes (${reduction}% reduction)`);
 
         // Warn when payload is still large
         if (optimizedSize > 1024 * 1024) { // > 1MB
-            console.warn(`[DQM] Optimized HTML still large: ${(optimizedSize / 1024 / 1024).toFixed(1)}MB`);
+            logger.warn(`Optimized HTML still large: ${(optimizedSize / 1024 / 1024).toFixed(1)}MB`);
         }
 
         return optimized;
@@ -425,7 +634,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
     // Function to open page with all errors highlighted in a new tab
     const openPageWithAllErrors = async (): Promise<void> => {
         if (!analysisData) {
-            console.error('[DQM] No analysis data available');
+            logger.error('No analysis data available');
             return;
         }
 
@@ -472,15 +681,15 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                 // Open in new tab
                 const newWindow = window.open('', '_blank');
                 if (newWindow) {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(htmlContent, 'text/html');
-
-                    const documentElement = doc.documentElement;
-
-                    documentElement.getElementsByTagName('body')[0].style.overflow = 'auto'
-
+                    try {
+                        // Prevent reverse tabnabbing and unwanted redirects/scripts.
+                        newWindow.opener = null;
+                    } catch {
+                        // ignore
+                    }
+                    const safeHtml = sanitizeHtmlDocument(htmlContent, {allowScripts: false});
                     newWindow.document.open();
-                    newWindow.document.write(documentElement.outerHTML);
+                    newWindow.document.write(safeHtml);
                     newWindow.document.close();
 
                     // Add custom styles for better error visibility in the new tab
@@ -506,19 +715,19 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                     }, 100);
                 }
             } else {
-                console.warn('[DQM] No content in response');
-                alert('Failed to load page with all errors. Please try again.');
+                logger.warn('No content in response');
+                alert(t('sidebar:failed_load_all_errors'));
             }
         } catch (err) {
-            console.error('[DQM] Failed to fetch page with all errors:', err);
-            alert('Failed to load page with all errors. Please try again.');
+            logger.error('Failed to fetch page with all errors:', err);
+            alert(t('sidebar:failed_load_all_errors'));
         } finally {
             setLoadingAllErrors(false);
         }
     };
 
-    const pollAnalysisStatus = async (assetId: string, attempt: number = 0): Promise<void> => {
-        console.log('[DQM] Polling analysis status, attempt', attempt + 1, 'for assetId:', assetId);
+    const pollAnalysisStatus = useCallback(async (assetId: string, attempt: number = 0): Promise<void> => {
+        logger.debug('Polling analysis status, attempt', attempt + 1, 'for assetId:', assetId);
 
         const maxAttempts = 30;
         const baseDelay = 2000;
@@ -534,7 +743,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
             if (sessionType === 'backend') {
                 // Backend mode: Call backend proxy
                 statusUrl = `${baseUrl}/dqm/assets/${assetId}/status`;
-                console.log('[DQM] Polling backend:', statusUrl);
+                logger.debug('Polling backend:', statusUrl);
             } else {
                 // Direct mode: Call Crownpeak DQM API directly
                 const dqmApiKey = credentials?.apiKey || getLocalStorageItem('dqm_apiKey');
@@ -552,7 +761,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
 
                 const encodedApiKey = encodeURIComponent(dqmApiKey);
                 statusUrl = `${baseUrl}/assets/${assetId}/status?apiKey=${encodedApiKey}`;
-                console.log('[DQM] Polling direct:', statusUrl);
+                logger.debug('Polling direct:', statusUrl);
             }
 
             const response = await axios.get(statusUrl, {
@@ -570,40 +779,46 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
 
             if (isComplete) {
                 // Stop polling - analysis is done
-                if (pollingInterval) {
-                    clearInterval(pollingInterval);
-                    setPollingInterval(null);
+                if (pollingIntervalRef.current) {
+                    clearInterval(pollingIntervalRef.current);
+                    pollingIntervalRef.current = null;
                 }
+                setPollingInterval(null);
 
-                setAnalysisData({
+                const nextData: AnalysisData = {
                     assetId: result.assetId || result.id,
                     created: result.created,
                     siteName: result.siteName,
                     totalCheckpoints: result.totalCheckpoints,
                     totalErrors: result.totalErrors,
                     checkpoints: result.checkpoints || []
-                });
+                };
+
+                setAnalysisDataOriginal(nextData);
+                setAnalysisData(nextData);
+                clearAssetCache();
 
                 setGroupedCategories(Object.entries(groupCheckpointsByCategory(result.checkpoints || [])));
                 setAnalysisState('completed');
-                setcurrentAssetId(null);
-                console.log('[DQM] Analysis completed:', result.checkpoints.length, '/', result.totalCheckpoints, 'checkpoints');
+                updateCurrentAssetId(null);
+                logger.debug('Analysis completed:', result.checkpoints.length, '/', result.totalCheckpoints, 'checkpoints');
             } else if (result.status === 'failed' || result.status === 'error') {
                 // Stop polling - analysis failed
-                if (pollingInterval) {
-                    clearInterval(pollingInterval);
-                    setPollingInterval(null);
+                if (pollingIntervalRef.current) {
+                    clearInterval(pollingIntervalRef.current);
+                    pollingIntervalRef.current = null;
                 }
+                setPollingInterval(null);
                 setError(result.error || result.message || 'Analysis failed with unknown error');
                 setGroupedCategories([]);
                 setAnalysisState('error');
-                setcurrentAssetId(null);
-                console.log('[DQM] Analysis failed:', result.error || result.message);
+                updateCurrentAssetId(null);
+                logger.debug('Analysis failed:', result.error || result.message);
             } else {
                 // Analysis still in progress
                 const currentCount = hasCheckpoints ? result.checkpoints.length : 0;
                 const totalCount = result.totalCheckpoints || '?';
-                console.log('[DQM] Analysis in progress:', currentCount, '/', totalCount, 'checkpoints');
+                logger.debug('Analysis in progress:', currentCount, '/', totalCount, 'checkpoints');
 
                 // Reset error state if previously set
                 if (error) {
@@ -611,7 +826,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                 }
             }
         } catch (err) {
-            console.error('[DQM] Polling failed:', err);
+            logger.error('Polling failed:', err);
 
             // Check if this is an authentication error
             if (axios.isAxiosError(err) && err.response?.status === 401) {
@@ -623,24 +838,27 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                 const delay = Math.min(baseDelay * Math.pow(1.5, attempt), maxDelay);
                 setTimeout(() => pollAnalysisStatus(assetId, attempt + 1), delay);
             } else {
-                if (pollingInterval) {
-                    clearInterval(pollingInterval);
-                    setPollingInterval(null);
+                if (pollingIntervalRef.current) {
+                    clearInterval(pollingIntervalRef.current);
+                    pollingIntervalRef.current = null;
                 }
+                setPollingInterval(null);
                 setError('Analysis polling failed after maximum attempts');
                 setGroupedCategories([]);
                 setAnalysisState('error');
-                setcurrentAssetId(null);
+                updateCurrentAssetId(null);
             }
         }
-    };
+    }, [getApiBaseUrl, getApiHeaders, sessionType, credentials, error, handleAuthError, updateCurrentAssetId]);
 
-    const startPolling = (assetId: string): void => {
-        if (pollingInterval) {
-            clearInterval(pollingInterval);
+    const startPolling = useCallback((assetId: string): void => {
+        if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
         }
+        setPollingInterval(null);
 
-        console.log('[DQM] Starting polling for assetId:', assetId);
+        logger.debug('Starting polling for assetId:', assetId);
 
         // Initial poll
         pollAnalysisStatus(assetId);
@@ -648,43 +866,36 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
         // Set up interval for subsequent polls
         const interval = setInterval(() => {
             // Check if we still have an asset ID (it gets cleared when analysis completes)
-            if (currentAssetId) {
+            if (currentAssetIdRef.current) {
                 pollAnalysisStatus(assetId);
             } else {
                 // Analysis is done, clear the interval
                 clearInterval(interval);
+                if (pollingIntervalRef.current === interval) pollingIntervalRef.current = null;
                 setPollingInterval(null);
             }
         }, 3000);
 
+        pollingIntervalRef.current = interval;
         setPollingInterval(interval);
-    };
+    }, [pollAnalysisStatus]);
 
-    const stopPolling = (): void => {
-        if (pollingInterval) {
-            clearInterval(pollingInterval);
-            setPollingInterval(null);
+    const stopPolling = useCallback((): void => {
+        if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
         }
-        setcurrentAssetId(null);
-    };
+        setPollingInterval(null);
+        updateCurrentAssetId(null);
+    }, [updateCurrentAssetId]);
 
-    useEffect(() => {
-        return () => {
-            stopPolling();
-        };
-    }, []);
-
-    useEffect(() => {
-        if (open) {
-            startAnalysis();
-        }
-    }, [open])
-
-    const startAnalysis = async (): Promise<void> => {
+    const startAnalysis = useCallback(async (): Promise<void> => {
         setAnalysisState('analyzing');
         setError(null);
         setAuthError(null);
         setAnalysisData(null);
+        setAnalysisDataOriginal(null);
+        // Translation progress will be reset when originalData changes
 
         try {
             // Check authentication based on session type
@@ -692,10 +903,10 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                 const token = sessionToken || getLocalStorageItem('dqm_sessionToken');
                 if (!token) {
                     setAnalysisState('idle');
-                    console.warn('[DQM] Cannot start analysis: No session token available');
+                    logger.warn('Cannot start analysis: No session token available');
                     return;
                 }
-                console.log('[DQM] Starting analysis with backend session token:', token.substring(0, 16) + '...');
+                logger.debug('Starting analysis with backend session token:', token.substring(0, 16) + '...');
             } else {
                 // Direct mode: Check API key and website ID
                 const dqmApiKey = credentials?.apiKey || getLocalStorageItem('dqm_apiKey');
@@ -703,7 +914,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
 
                 if (!dqmApiKey || !dqmWebsiteId) {
                     setAnalysisState('idle');
-                    console.warn('[DQM] Cannot start analysis: No credentials available');
+                    logger.warn('Cannot start analysis: No credentials available');
                     return;
                 }
 
@@ -713,13 +924,13 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                 } catch (encodingError) {
                     throw new Error(`Invalid API key: ${encodingError instanceof Error ? encodingError.message : 'encoding error'}`);
                 }
-                console.log('[DQM] Starting analysis with direct API key');
+                logger.debug('Starting analysis with direct API key');
             }
 
             // DEBUG MODE: Use debugHtml if provided (for testing only), otherwise use actual page HTML
             let htmlToAnalyze: string;
             if (debugHtml) {
-                console.warn('[DQM] DEBUG MODE: Using custom HTML from debugHtml prop');
+                logger.warn('DEBUG MODE: Using custom HTML from debugHtml prop');
                 htmlToAnalyze = debugHtml;
             } else {
                 htmlToAnalyze = document.documentElement.outerHTML;
@@ -741,7 +952,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                     html: optimizedHtml,
                     url: window.location.href,
                 };
-                console.log('[DQM] Using backend mode:', apiUrl);
+                logger.debug('Using backend mode:', apiUrl);
             } else {
                 // Direct mode: Call Crownpeak DQM API directly
                 const dqmApiKey = credentials?.apiKey || getLocalStorageItem('dqm_apiKey');
@@ -759,7 +970,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
 
                 // Override Content-Type for direct mode
                 headers['Content-Type'] = 'application/x-www-form-urlencoded';
-                console.log('[DQM] Using direct mode:', apiUrl);
+                logger.debug('Using direct mode:', apiUrl);
             }
 
             const response = await axios.post(apiUrl, requestData, {
@@ -770,13 +981,13 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
             const assetId = response.data?.assetId || response.data?.id;
 
             if (assetId) {
-                setcurrentAssetId(assetId);
+                updateCurrentAssetId(assetId);
                 startPolling(assetId);
             } else {
                 throw new Error('No Asset ID returned from API');
             }
         } catch (err) {
-            console.error('[DQM] Analysis failed:', err);
+            logger.error('Analysis failed:', err);
 
             // Check if this is an authentication error
             if (axios.isAxiosError(err) && err.response?.status === 401) {
@@ -797,14 +1008,52 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
             setAnalysisState('error');
             stopPolling();
         }
-    };
+    }, [sessionType, sessionToken, credentials, debugHtml, getApiBaseUrl, getApiHeaders, handleAuthError, startPolling, stopPolling]);
+    
+    // Auto-start analysis when authenticated with credentials
+    useEffect(() => {
+        if (isAuthenticated && credentials && analysisState === 'idle') {
+            logger.debug('Auto-starting analysis with available credentials');
+            startAnalysis();
+        }
+    }, [isAuthenticated, credentials, startAnalysis, analysisState]);
+
+    // Reset translated view when original data changes
+    const resetTranslatedView = useCallback((nextData: AnalysisData | null) => {
+        setAnalysisData(nextData);
+        setSelectedCategoryFilters(new Set());
+        if (nextData) {
+            setGroupedCategories(Object.entries(groupCheckpointsByCategory(nextData.checkpoints || [])));
+        } else {
+            setGroupedCategories([]);
+        }
+    }, []);
+
+    useEffect(() => {
+        return () => {
+            stopPolling();
+        };
+    }, []);
+
+    useEffect(() => {
+        if (open === true) {
+            startAnalysis();
+        }
+    }, [open])
+
+    // Keep the checkpoint details panel in sync when switching between translated and original data.
+    useEffect(() => {
+        if (!analysisData || !currentCheckpointId) return;
+        const next = analysisData.checkpoints.find((cp) => cp.id === currentCheckpointId) || null;
+        setCurrentCheckpoint(next);
+    }, [analysisData, currentCheckpointId]);
 
     const calculateQualityScore = (data: AnalysisData): number => {
         if (!data.totalCheckpoints || data.totalCheckpoints === 0) return 0;
         return Math.round(((data.totalCheckpoints - data.totalErrors) / data.totalCheckpoints) * 100);
     };
 
-    const groupCheckpointsByCategory = (checkpoints: AnalysisData['checkpoints']) => {
+    const groupCheckpointsByCategory = useCallback((checkpoints: AnalysisData['checkpoints']) => {
         const categories = checkpoints.reduce((acc, checkpoint) => {
             if (!acc[checkpoint.category]) {
                 acc[checkpoint.category] = [];
@@ -819,7 +1068,16 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
             })
         });
         return categories;
-    };
+    }, []);
+
+    // Keep groupedCategories in sync when translations change the checkpoint names
+    useEffect(() => {
+        if (!analysisData) {
+            setGroupedCategories([]);
+            return;
+        }
+        setGroupedCategories(Object.entries(groupCheckpointsByCategory(analysisData.checkpoints || [])));
+    }, [analysisData, groupCheckpointsByCategory]);
 
     const fetchHighlightedErrors = async (assetId: string, checkpointId: string, openTab = 'browser'): Promise<void> => {
         setHighlightedContent('');
@@ -828,6 +1086,12 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
         // Start with browser view (navigation arrows only appear in source view)
         setHighlightViewMode(openTab as any);
         setOpenHighlightModal(true);
+
+        // Sync to Redux
+        dispatch(setReduxHighlightedContent(''));
+        dispatch(setReduxHighlightLoading(true));
+        dispatch(setReduxViewMode(openTab as 'browser' | 'source'));
+        dispatch(reduxOpenModal());
 
         // Reset cached content for new checkpoint
         setCachedContentByCheckpoint(prev => ({
@@ -839,6 +1103,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
         // Find and set the current checkpoint object
         const checkpoint = analysisData?.checkpoints.find(cp => cp.id === checkpointId) || null;
         setCurrentCheckpoint(checkpoint);
+        dispatch(setReduxCheckpoint(checkpoint));
 
         try {
             // Get API base URL and headers based on session type
@@ -898,7 +1163,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                 },
             }));
 
-            console.log('[DQM] Both views loaded and cached');
+            logger.debug('Both views loaded and cached');
 
             if (openTab === 'browser' && checkpoint?.canHighlight?.page && analysisData) {
                 restoreBrowserView(analysisData.assetId, checkpoint.id);
@@ -906,8 +1171,8 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                 fetchSourceViewForCheckpoint(analysisData.assetId, checkpoint.id);
             }
         } catch (err) {
-            console.error('[DQM] Failed to fetch highlighted content:', err);
-            setHighlightedContent('<p style="color: #dc3545;">Failed to load highlighted content. Please try again.</p>');
+            logger.error('Failed to fetch highlighted content:', err);
+            setHighlightedContent(`<p style="color: #dc3545;">${t('sidebar:failed_load_highlights')}</p>`);
         } finally {
             setLoadingHighlight(false);
         }
@@ -918,13 +1183,13 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
         // Check if source view is already cached for THIS checkpoint
         const cachedForCheckpoint = cachedContentByCheckpoint[checkpointId];
         if (cachedForCheckpoint && cachedForCheckpoint.source) {
-            console.log('[DQM] Using cached source view for checkpoint:', checkpointId);
+            logger.debug('Using cached source view for checkpoint:', checkpointId);
             setHighlightedContent(cachedForCheckpoint.source);
             return;
         }
 
         // This should never happen since we prefetch both views, but keep as fallback
-        console.warn('[DQM] Source view not in cache for checkpoint:', checkpointId, ', fetching...');
+        logger.warn('Source view not in cache for checkpoint:', checkpointId, ', fetching...');
         setLoadingHighlight(true);
 
         try {
@@ -975,12 +1240,12 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                     },
                 }));
             } else {
-                console.warn('[DQM] No highlighted content in response');
-                setHighlightedContent('<p>No highlighted content available.</p>');
+                logger.warn('No highlighted content in response');
+                setHighlightedContent(`<p>${t('sidebar:no_highlighted_content')}</p>`);
             }
         } catch (err) {
-            console.error('[DQM] Failed to fetch source view:', err);
-            setHighlightedContent('<p style="color: #dc3545;">Failed to load source view. Please try again.</p>');
+            logger.error('Failed to fetch source view:', err);
+            setHighlightedContent(`<p style="color: #dc3545;">${t('sidebar:failed_load_source')}</p>`);
         } finally {
             setLoadingHighlight(false);
         }
@@ -991,13 +1256,13 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
         // Check if browser view is already cached for THIS checkpoint
         const cachedForCheckpoint = cachedContentByCheckpoint[checkpointId];
         if (cachedForCheckpoint && cachedForCheckpoint.browser) {
-            console.log('[DQM] Using cached browser view for checkpoint:', checkpointId);
+            logger.debug('Using cached browser view for checkpoint:', checkpointId);
             setHighlightedContent(cachedForCheckpoint.browser);
             return;
         }
 
         // This should never happen since we prefetch both views, but keep as fallback
-        console.warn('[DQM] Browser view not in cache for checkpoint:', checkpointId, ', fetching...');
+        logger.warn('Browser view not in cache for checkpoint:', checkpointId, ', fetching...');
         setLoadingHighlight(true);
 
         try {
@@ -1048,24 +1313,16 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                     },
                 }));
             } else {
-                console.warn('[DQM] No highlighted content in response');
-                setHighlightedContent('<p>No highlighted content available.</p>');
+                logger.warn('No highlighted content in response');
+                setHighlightedContent(`<p>${t('sidebar:no_highlighted_content')}</p>`);
             }
         } catch (err) {
-            console.error('[DQM] Failed to restore browser view:', err);
-            setHighlightedContent('<p style="color: #dc3545;">Failed to load browser view. Please try again.</p>');
+            logger.error('Failed to restore browser view:', err);
+            setHighlightedContent(`<p style="color: #dc3545;">${t('sidebar:failed_load_browser')}</p>`);
         } finally {
             setLoadingHighlight(false);
         }
     };
-
-    // Debug logging
-    console.log('[DQMSidebar] Render state:', {
-        isAuthenticated,
-        analysisState,
-        authError,
-        hasCredentials: !!credentials,
-    });
 
     return (
         <ThemeProvider theme={createTheme({
@@ -1121,11 +1378,12 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
             },
         })}>
             <CssBaseline/>
-            <Tooltip title="DQM Quality Analysis" placement="left">
+            <Tooltip title={t('sidebar:fab_tooltip')} placement="left">
                 <StyledFab
+                    data-testid="dqm-fab"
                     overlayInfo={overlayInfo}
                     onClick={() => open ? onClose() : onOpen()}
-                    aria-label="DQM Quality Analysis"
+                    aria-label={t('sidebar:fab_tooltip')}
                     style={{
                         opacity: open ? 0 : 1,
                         position: 'fixed',
@@ -1167,15 +1425,6 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                             overflow: 'auto',
                         }}
                     >
-                        {/* OAuth2 Callback Handler */}
-                        {config?.oauth2Config && (
-                            <OAuth2CallbackHandler
-                                config={config}
-                                onAuthSuccess={handleAuthSuccess}
-                                onAuthError={handleAuthenticationError}
-                            />
-                        )}
-
                         {/* Header with Logo */}
                         <Box
                             sx={{
@@ -1189,7 +1438,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                         >
                             <svg
                                 style={{width: '24px', height: '24px', marginBottom: '1rem'}}
-                                aria-label="Crownpeak Digital Quality & Accessibility Analysis"
+                                aria-label={t('sidebar:title')}
                                 xmlns="http://www.w3.org/2000/svg"
                                 viewBox="0 0 500 500"
                             >
@@ -1210,7 +1459,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                 </g>
                             </svg>
                             <Typography variant="subtitle1">
-                                Digital Quality & Accessibility Analysis
+                                {t('sidebar:title')}
                             </Typography>
                         </Box>
 
@@ -1246,7 +1495,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                     backgroundColor: 'rgba(255, 255, 255, 0.2)',
                                 },
                             }}
-                            aria-label="Close"
+                            aria-label={t('sidebar:close')}
                         >
                             <CloseIcon/>
                         </IconButton>
@@ -1254,8 +1503,8 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                 ) : (
                     <>
                         {/* Normal Sidebar Content when authenticated */}
-                        <SidebarHeader>
-                            <Box display="flex" alignItems="center" gap={1.5} justifyContent="center"
+                        <SidebarHeader sx={{justifyContent: 'space-between'}}>
+                            <Box display="flex" alignItems="center" gap={1.5} justifyContent="flex-start"
                                  width="100%">
                                 <Typography variant="h6" component="h1" fontWeight={700}
                                             flexDirection="row" alignItems="center" display="flex"
@@ -1263,19 +1512,42 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                     <img width={24} height={24} style={{marginRight: '0.5rem'}}
                                          src="https://app-assets.gadget.dev/a/255812/505265/assets/dqm.svg"
                                          alt="Crownpeak DQM"/>
-                                    Digital Quality and Accessibility
+                                    {t('sidebar:title')}
                                 </Typography>
                             </Box>
-                            {!logoutDisabled && (
-                                <Tooltip title="Logout">
-                                    <HeaderButton index={1} onClick={handleLogout} aria-label="Logout">
-                                        <LogoutIcon/>
+                            <Box display="flex" alignItems="center" gap={1}>
+                                <Tooltip title={t('sidebar:ai_settings', { defaultValue: 'AI Assistant' })}>
+                                    <HeaderButton
+                                        index={logoutDisabled ? 1 : 2}
+                                        onClick={() => setTranslationDialogOpen(true)}
+                                        aria-label={t('sidebar:ai_settings', { defaultValue: 'AI Assistant' })}
+                                        sx={{
+                                            color: aiEnabled
+                                                ? translationState === 'error'
+                                                    ? 'error.main'
+                                                    : 'primary.main'
+                                                : 'text.secondary',
+                                        }}
+                                    >
+                                        {translationState === 'initializing' || translationState === 'translating' ? (
+                                            <CircularProgress size={22} thickness={4} sx={{ color: 'inherit' }} />
+                                        ) : (
+                                            <AutoAwesomeIcon fontSize="small" />
+                                        )}
                                     </HeaderButton>
                                 </Tooltip>
-                            )}
-                            <HeaderButton onClick={onClose} aria-label="Close sidebar">
-                                <CloseIcon/>
-                            </HeaderButton>
+                                <LanguageSwitch index={logoutDisabled ? 2 : 3}/>
+                                {!logoutDisabled && (
+                                    <Tooltip title={t('common:logout')}>
+                                        <HeaderButton index={1} onClick={handleLogout} aria-label={t('common:logout')}>
+                                            <LogoutIcon/>
+                                        </HeaderButton>
+                                    </Tooltip>
+                                )}
+                                <HeaderButton data-testid="sidebar-close" onClick={onClose} aria-label={t('sidebar:close_sidebar')}>
+                                    <CloseIcon/>
+                                </HeaderButton>
+                            </Box>
                         </SidebarHeader>
 
                         <SidebarContent>
@@ -1285,12 +1557,11 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                          justifyContent="center" minHeight="400px">
                                         <Typography variant="h5" fontWeight={600} gutterBottom color="text.secondary"
                                                     textAlign="center">
-                                            Ready to Analyze
+                                            {t('sidebar:ready_title')}
                                         </Typography>
                                         <Typography variant="body1" color="text.secondary" textAlign="center"
                                                     sx={{maxWidth: 400, mb: 3}}>
-                                            Click "Run Quality Check" to analyze the current page for accessibility and
-                                            quality issues.
+                                            {t('sidebar:ready_body')}
                                         </Typography>
                                         <Box
                                             component="svg"
@@ -1313,9 +1584,9 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                             severity={authError.includes('Permission denied') ? 'warning' : 'error'}
                                         >
                                             <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-                                                {authError.includes('Permission denied') ? 'Access Denied' :
-                                                    authError.includes('not configured') ? 'Configuration Required' :
-                                                        'Authentication Error'}
+                                                {authError.includes('Permission denied') ? t('sidebar:access_denied') :
+                                                    authError.includes('not configured') ? t('sidebar:config_required') :
+                                                        t('sidebar:auth_error')}
                                             </Typography>
                                             <Typography variant="body2" color="text.secondary">
                                                 {authError}
@@ -1336,12 +1607,12 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                     startIcon={<RefreshIcon/>}
                                                     sx={{textTransform: 'none', fontWeight: 'bolder', fontSize: '1rem'}}
                                                 >
-                                                    Retry
+                                                    {t('sidebar:retry')}
                                                 </Button>
                                             }
                                         >
                                             <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-                                                Analysis Failed
+                                                {t('sidebar:analysis_failed')}
                                             </Typography>
                                             <Typography variant="body2" color="text.secondary">
                                                 {error}
@@ -1360,7 +1631,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                 justifyContent: 'flex-start',
                                                 gap: 1,
                                             }}>
-                                                Overall Quality
+                                                {t('sidebar:overall_quality')}
                                             </Typography>
                                             <Box display="flex" alignItems="center" justifyContent="flex-start "
                                                  columnGap={'60px'} pt={2}>
@@ -1376,7 +1647,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                             <Typography color="text.primary" fontSize="12px"
                                                                         fontWeight={400}
                                                                         sx={{color: 'gray', textAlign: 'center'}}>
-                                                                Passed
+                                                                {t('sidebar:passed')}
                                                                 <p style={{
                                                                     margin: 0,
                                                                     fontWeight: 600,
@@ -1400,7 +1671,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                                     fontSize: '26px',
                                                                     color: '#dc3545'
                                                                 }}>{analysisData.totalErrors}</p>
-                                                                Failed
+                                                                {t('sidebar:failed')}
                                                             </Typography>
                                                         </Box>
                                                     </Box>
@@ -1424,11 +1695,107 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                         {loadingAllErrors ? (
                                                             <CircularProgress size={24} sx={{mr: 1}}/>
                                                         ) : null}
-                                                        Show Page with all Errors
+                                                        {t('sidebar:show_all_errors')}
                                                     </Button>
                                                 </Box>
                                             </Box>
                                         </QualityOverviewCard>
+
+                                        {/* AI Summary */}
+                                        <AISummaryCard>
+                                            <Box display="flex" alignItems="center" justifyContent="space-between" gap={2} flexWrap="wrap">
+                                                <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <AutoAwesomeIcon fontSize="small" />
+                                                {t('sidebar:summary_title')}
+                                                    <Tooltip
+                                                        title={t('sidebar:summary_model_tooltip', {
+                                                            defaultValue: 'Modell: {{model}}',
+                                                            model: aiModelIdEffective,
+                                                        })}
+                                                    >
+                                                        <Chip
+                                                            size="small"
+                                                            label="ChatGPT"
+                                                            sx={{ ml: 1, fontWeight: 600 }}
+                                                        />
+                                                    </Tooltip>
+                                                </Typography>
+                                                <Box display="flex" gap={1} alignItems="center">
+                                                    <Button
+                                                        variant="outlined"
+                                                        size="small"
+                                                        onClick={() => setTranslationDialogOpen(true)}
+                                                        sx={{ textTransform: 'none' }}
+                                                    >
+                                                        {t('sidebar:ai_settings')}
+                                                    </Button>
+                                                    <Button
+                                                        variant="outlined"
+                                                        size="small"
+                                                        startIcon={<ReplayIcon />}
+                                                        onClick={restartSummary}
+                                                        disabled={!summaryEnabled || summaryState === 'generating'}
+                                                        sx={{ textTransform: 'none' }}
+                                                    >
+                                                        {t('sidebar:summary_regenerate')}
+                                                    </Button>
+                                                </Box>
+                                            </Box>
+
+                                            <Typography variant="caption" color="text.secondary">
+                                                {t('sidebar:summary_disclaimer')}
+                                            </Typography>
+
+                                            {!summaryEnabled ? (
+                                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                                        {t('sidebar:summary_disabled')}
+                                                </Typography>
+                                            ) : summaryState === 'generating' ? (
+                                                <Box sx={{ mt: 2 }}>
+                                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                                        {t('sidebar:summary_generating')}
+                                                    </Typography>
+                                                    <LinearProgress />
+                                                    <Box sx={{ mt: 2 }}>
+                                                        <Skeleton height={24} />
+                                                        <Skeleton height={24} />
+                                                        <Skeleton height={24} />
+                                                    </Box>
+                                                </Box>
+                                            ) : summaryState === 'error' ? (
+                                                <Alert severity="warning" sx={{ mt: 2 }}>
+                                                    <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                                                        {t('sidebar:summary_failed')}
+                                                    </Typography>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        {summaryError}
+                                                    </Typography>
+                                                </Alert>
+                                            ) : summaryBullets && summaryBullets.length > 0 ? (
+                                                <Box component="ul" sx={{ mt: 2, mb: 0, pl: 3 }}>
+                                                    {summaryBullets.map((bullet, idx) => (
+                                                        <Typography component="li" key={idx} variant="body2" sx={{ mb: 0.75 }}>
+                                                            {bullet}
+                                                        </Typography>
+                                                    ))}
+                                                </Box>
+                                            ) : (
+                                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                                    {t('sidebar:summary_empty')}
+                                                </Typography>
+                                            )}
+
+                                            {summaryStats && (
+                                                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                                                    {t('sidebar:summary_stats', {
+                                                        attempts: summaryStats.attempts,
+                                                        empty: summaryStats.emptyResponses,
+                                                        mode: summaryStats.fallbackUsed,
+                                                        duration: summaryStats.durationMs,
+                                                    })}
+                                                </Typography>
+                                            )}
+                                        </AISummaryCard>
 
                                         {/* Quality Breakdown - Accordion with compact collapsed view */}
                                         <Accordion expanded={expanded}
@@ -1459,7 +1826,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                 <Typography variant="h6" fontWeight={700} sx={{
                                                     flexShrink: 0,
                                                 }}>
-                                                    Quality Breakdown
+                                                    {t('sidebar:quality_breakdown')}
                                                 </Typography>
 
                                                 {/* Collapsed view: Show category circles with tooltips */}
@@ -1504,13 +1871,13 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                                             </Typography>
                                                                             <Typography variant="caption"
                                                                                         display="block">
-                                                                                {percentage}% passed
+                                                                                {t('sidebar:percent_passed', { percent: percentage })}
                                                                             </Typography>
                                                                             <Typography variant="caption"
                                                                                         display="block">
                                                                                 {failedCount === 0
-                                                                                    ? 'All Passed'
-                                                                                    : `${passedCount} of ${checkpoints.length} passed`
+                                                                                    ? t('sidebar:all_passed')
+                                                                                    : t('sidebar:x_of_y_passed', { passed: passedCount, total: checkpoints.length })
                                                                                 }
                                                                             </Typography>
                                                                         </Box>
@@ -1606,7 +1973,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                                                         fontWeight={400}
                                                                                         color={failedCount > 0 ? '#dc3545' : '#28a745'}
                                                                                     >
-                                                                                        {failedCount === 0 ? 'All Passed' : `${passedCount} of ${checkpoints.length} Passed`}
+                                                                                        {failedCount === 0 ? t('sidebar:all_passed') : t('sidebar:x_of_y_passed', { passed: passedCount, total: checkpoints.length })}
                                                                                     </Typography>
                                                                                 </Typography>
                                                                             </Typography>
@@ -1629,14 +1996,19 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                     px: 2,
                                                     pt: 4
                                                 }}>
-                                                    Failed Checkpoints
+                                                    {t('sidebar:failed_checkpoints')}
                                                     ({analysisData.checkpoints.filter(cp => cp.failed).length})
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary" sx={{ px: 2, display: 'block', mb: 1 }}>
+                                                    {t('sidebar:translation_disclaimer', {
+                                                        defaultValue: 'KI-Übersetzungen können ungenau sein. Fachbegriffe und Inhalte bitte prüfen.',
+                                                    })}
                                                 </Typography>
 
                                                 {/* Category Filter Chips - Sticky section outside the card */}
                                                 <Box sx={{
                                                     position: 'sticky',
-                                                    top: -31,
+                                                    top: -32,
                                                     zIndex: 10,
                                                     py: 2,
                                                     borderRadius: 0
@@ -1652,8 +2024,9 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                              mb={1}>
                                                             <Typography variant="body2" color="text.secondary"
                                                                         fontWeight={600}>
-                                                                Filter by Category ·
-                                                                Showing {selectedCategoryFilters.size > 0 ? selectedCategoryFilters.size : 'all'} of {Object.keys(groupedCategories).length} categories
+                                                                {t('sidebar:filter_by_category')} · {selectedCategoryFilters.size > 0 
+                                                                    ? t('sidebar:showing_categories', { count: selectedCategoryFilters.size, total: Object.keys(groupedCategories).length })
+                                                                    : t('sidebar:showing_all_categories', { total: Object.keys(groupedCategories).length })}
                                                             </Typography>
                                                             <Button size="small"
                                                                     onClick={() => setSelectedCategoryFilters(new Set())}
@@ -1663,7 +2036,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                                         opacity: selectedCategoryFilters.size === 0 ? 0 : 1,
                                                                         transition: 'opacity 0.2s ease-in-out',
                                                                     }}>
-                                                                Show All
+                                                                {t('sidebar:show_all')}
                                                             </Button>
                                                         </Box>
                                                         <Box display="flex" gap={1} flexWrap="nowrap"
@@ -1742,12 +2115,17 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                                                                       alignItems: 'flex-start'
                                                                                                   }}>
                                                                                             <Box mt={0.5}>
-                                                                                                <Typography variant="h5"
-                                                                                                            component="div"
-                                                                                                            fontWeight={600}
-                                                                                                            mb={1.5}>
-                                                                                                    {checkpoint.name}
-                                                                                                </Typography>
+                                                                                                <Box display="flex" alignItems="center" gap={1}>
+                                                                                                    <Typography
+                                                                                                        variant="h5"
+                                                                                                        component="div"
+                                                                                                        fontWeight={600}
+                                                                                                        mb={1.5}
+                                                                                                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                                                                                                    >
+                                                                                                        {checkpoint.name}
+                                                                                                    </Typography>
+                                                                                                </Box>
                                                                                                 <Box display="flex"
                                                                                                      gap={1}
                                                                                                      flexWrap="wrap"
@@ -1769,8 +2147,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                                                                                 fontSize: '0.875rem',
                                                                                                             }}
                                                                                                         >
-                                                                                                            View in
-                                                                                                            Browser
+                                                                                                            {t('sidebar:view_in_browser')}
                                                                                                         </Button>
                                                                                                     )}
                                                                                                     {checkpoint?.canHighlight.source && (
@@ -1789,7 +2166,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                                                                                 fontSize: '0.875rem',
                                                                                                             }}
                                                                                                         >
-                                                                                                            View Source
+                                                                                                            {t('sidebar:view_source')}
                                                                                                         </Button>
                                                                                                     )}
                                                                                                     <Typography
@@ -1863,14 +2240,44 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                     },
                                 }}
                             >
-                                {analysisState === 'analyzing' ? 'Analyzing...' : 'Run Quality Check'}
+                                {analysisState === 'analyzing' ? t('sidebar:analyzing', {defaultValue: 'Analyzing...'}) : t('sidebar:run_quality_check')}
                             </Button>
                         </SidebarFooter>
+
+                        {/* AI Settings Dialog */}
+                        <AISettingsDialog
+                            open={translationDialogOpen}
+                            onClose={() => setTranslationDialogOpen(false)}
+                            translationEnabled={translationEnabled}
+                            setTranslationEnabled={setTranslationEnabled}
+                            translationMode={translationMode}
+                            setTranslationMode={setTranslationMode}
+                            translationTargetLang={translationTargetLang}
+                            translationNeeded={translationNeeded}
+                            summaryEnabled={summaryEnabled}
+                            setSummaryEnabled={setSummaryEnabled}
+                            restartSummary={restartSummary}
+                            openAiApiKey={openAiApiKey}
+                            setOpenAiApiKey={setOpenAiApiKey}
+                            openAiModel={openAiModel}
+                            setOpenAiModel={setOpenAiModel}
+                            openAiBaseUrl={openAiBaseUrl}
+                            setOpenAiBaseUrl={setOpenAiBaseUrl}
+                            aiModelIdEffective={aiModelIdEffective}
+                            translationState={translationState}
+                            translationError={translationError}
+                            translationProgress={translationProgress}
+                            clearTranslationCache={clearTranslationCache}
+                            restartTranslation={restartTranslation}
+                            hasAnalysisData={!!analysisDataOriginal}
+                            openAiSettingsExpanded={openAiSettingsExpanded}
+                            setOpenAiSettingsExpanded={setOpenAiSettingsExpanded}
+                        />
 
                         {/* Highlighted Errors Modal */}
                         <Dialog
                             open={openHighlightModal}
-                            onClose={() => setOpenHighlightModal(false)}
+                            onClose={handleCloseHighlightModal}
                             maxWidth="xl"
                             fullWidth
                             PaperProps={{
@@ -1891,17 +2298,17 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                 }}
                             >
                                 <Typography variant="h6" fontWeight={700} color="text.primary">
-                                    Highlighted Errors
+                                    {t('sidebar:highlighted_errors')}
                                 </Typography>
                                 <IconButton
-                                    onClick={() => setOpenHighlightModal(false)}
+                                    onClick={handleCloseHighlightModal}
                                     sx={{
                                         color: 'text.secondary',
                                         '&:hover': {
                                             backgroundColor: 'rgba(0, 0, 0, 0.04)',
                                         },
                                     }}
-                                    aria-label="Close"
+                                    aria-label={t('sidebar:close')}
                                 >
                                     <CloseIcon/>
                                 </IconButton>
@@ -2001,7 +2408,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                         <Box textAlign="center">
                                                             <CircularProgress size={48} sx={{color: '#c653ff', mb: 2}}/>
                                                             <Typography variant="body2" color="text.secondary">
-                                                                Loading both views...
+                                                                {t('sidebar:loading_views')}
                                                             </Typography>
                                                         </Box>
                                                     </Box>
@@ -2056,10 +2463,10 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                             },
                                                         }}
                                                     >
-                                                        <Tab label="Browser View" value="browser" sx={{
+                                                        <Tab label={t('sidebar:browser_view')} value="browser" sx={{
                                                             display: currentCheckpoint?.canHighlight.page ? 'inline-flex' : 'none'
                                                         }}/>
-                                                        <Tab label="Source View" value="source" sx={{
+                                                        <Tab label={t('sidebar:source_view')} value="source" sx={{
                                                             display: currentCheckpoint?.canHighlight.source ? 'inline-flex' : 'none'
                                                         }}/>
                                                     </Tabs>
@@ -2085,7 +2492,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                                         textAlign: 'center',
                                                                     }}
                                                                 >
-                                                                    {visibleHighlight || currentHighlight || 1} of {totalHighlights}
+                                                                    {t('sidebar:x_of_y', { current: visibleHighlight || currentHighlight || 1, total: totalHighlights })}
                                                                 </Typography>
                                                                 <IconButton
                                                                     size="small"
@@ -2096,7 +2503,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                                             backgroundColor: 'rgba(0, 0, 0, 0.04)',
                                                                         },
                                                                     }}
-                                                                    aria-label="Previous highlight"
+                                                                    aria-label={t('sidebar:prev_highlight')}
                                                                 >
                                                                     <ArrowBackIcon fontSize="small"/>
                                                                 </IconButton>
@@ -2109,7 +2516,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                                             backgroundColor: 'rgba(0, 0, 0, 0.04)',
                                                                         },
                                                                     }}
-                                                                    aria-label="Next highlight"
+                                                                    aria-label={t('sidebar:next_highlight')}
                                                                 >
                                                                     <ArrowForwardIcon fontSize="small"/>
                                                                 </IconButton>
@@ -2122,27 +2529,26 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                                     backgroundColor: 'rgba(0, 0, 0, 0.04)',
                                                                 },
                                                             }}
-                                                            aria-label="Reload highlights"
+                                                            aria-label={t('sidebar:reload_highlights')}
                                                         >
                                                             <ReplayIcon fontSize="small"/>
                                                         </IconButton>
                                                         {/* Open in new tab button */}
-                                                        <Tooltip title="Open in new tab" placement="top">
+                                                        <Tooltip title={t('sidebar:open_in_new_tab')} placement="top">
                                                             <IconButton
                                                                 size="small"
                                                                 onClick={() => {
                                                                     // Create a new window/tab and write the HTML content to it
                                                                     const newWindow = window.open('', '_blank');
                                                                     if (newWindow) {
-                                                                        const parser = new DOMParser();
-                                                                        const doc = parser.parseFromString(highlightedContent, 'text/html');
-
-                                                                        const documentElement = doc.documentElement;
-
-                                                                        documentElement.getElementsByTagName('body')[0].style.overflow = 'auto'
-
+                                                                        try {
+                                                                            newWindow.opener = null;
+                                                                        } catch {
+                                                                            // ignore
+                                                                        }
+                                                                        const safeHtml = sanitizeHtmlDocument(highlightedContent, {allowScripts: false});
                                                                         newWindow.document.open();
-                                                                        newWindow.document.write(documentElement.outerHTML);
+                                                                        newWindow.document.write(safeHtml);
                                                                         newWindow.document.close();
 
                                                                         // Add scrollIntoView functionality for highlights in the new tab
@@ -2160,12 +2566,12 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                                                 highlightSelectors.join(', ')
                                                                             );
 
-                                                                            console.log('[DQM] Found highlights in new tab:', highlights.length);
+                                                                            logger.debug('Found highlights in new tab:', highlights.length);
 
                                                                             // Scroll to first highlight if available
                                                                             if (highlights.length > 0) {
                                                                                 const firstHighlight = highlights[0] as HTMLElement;
-                                                                                console.log('[DQM] Scrolling to first highlight in new tab');
+                                                                                logger.debug('Scrolling to first highlight in new tab');
 
                                                                                 firstHighlight.scrollIntoView({
                                                                                     behavior: 'smooth',
@@ -2177,7 +2583,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                                                     firstHighlight.classList.remove('animate');
                                                                                 }, 800);
                                                                             } else {
-                                                                                console.warn('[DQM] No highlights found in new tab');
+                                                                                logger.warn('No highlights found in new tab');
                                                                             }
                                                                         }, 500); // Increased timeout to ensure DOM is ready
                                                                     }
@@ -2187,7 +2593,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                                         backgroundColor: 'rgba(0, 0, 0, 0.04)',
                                                                     },
                                                                 }}
-                                                                aria-label="Open in new tab"
+                                                                aria-label={t('sidebar:open_in_new_tab')}
                                                             >
                                                                 <OpenInNewIcon fontSize="small"/>
                                                             </IconButton>
@@ -2195,7 +2601,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                         {/* Scripts toggle button - only show in browser view */}
                                                         {highlightViewMode === 'browser' && (
                                                             <Tooltip
-                                                                title={scriptsDisabled ? "Enable JavaScript" : "Disable JavaScript"}
+                                                                title={scriptsDisabled ? t('sidebar:enable_js') : t('sidebar:disable_js')}
                                                                 placement="top">
                                                                 <IconButton
                                                                     size="small"
@@ -2206,7 +2612,7 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                                                                             backgroundColor: 'rgba(0, 0, 0, 0.04)',
                                                                         },
                                                                     }}
-                                                                    aria-label={scriptsDisabled ? "Enable JavaScript" : "Disable JavaScript"}
+                                                                    aria-label={scriptsDisabled ? t('sidebar:enable_js') : t('sidebar:disable_js')}
                                                                 >
                                                                     <svg xmlns="http://www.w3.org/2000/svg" width="20"
                                                                          height="20" viewBox="0 0 24 24" fill="none"
@@ -2251,6 +2657,22 @@ export const DQMSidebar: React.FC<DQMSidebarProps> = ({
                 )}
             </StyledDrawer>
         </ThemeProvider>
+    );
+};
+
+// Exported component that wraps DQMSidebarInner with Redux Provider, I18nextProvider, and AIProvider
+export const DQMSidebar: React.FC<DQMSidebarProps> = (props) => {
+    return (
+        <I18nextProvider i18n={i18n}>
+            <Provider store={store}>
+                <AIProvider
+                    translationConfig={props.config?.translation}
+                    summaryConfig={props.config?.summary}
+                >
+                    <DQMSidebarInner {...props} />
+                </AIProvider>
+            </Provider>
+        </I18nextProvider>
     );
 };
 

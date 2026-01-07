@@ -41,8 +41,8 @@ npm run dev
 ```
 
 This starts:
-- Client on `http://localhost:5173`
-- Backend on `http://localhost:3001`
+- Frontend + Backend on `http://localhost:5173` (Vite dev server with integrated backend)
+- Backend routes (`/auth/*`, `/dqm/*`) handled by Vite plugin
 
 ### Building
 

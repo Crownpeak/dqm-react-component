@@ -1,0 +1,56 @@
+{
+  "name": "@crownpeak/dqm-react-component-dev-mcp",
+  "version": "1.2.0",
+  "description": "MCP Server for Crownpeak DQM React Component documentation - powered by Probe",
+  "author": "Crownpeak Technology GmbH",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "dqm-dev-mcp": "bin/mcp"
+  },
+  "files": [
+    "bin",
+    "src",
+    "data",
+    "docs-mcp.config.json"
+  ],
+  "scripts": {
+    "build": "node scripts/build.js",
+    "start": "node src/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@probelabs/probe": "^0.6.0-rc128",
+    "@modelcontextprotocol/sdk": "^1.6.0",
+    "axios": "^1.6.0",
+    "fs-extra": "^11.2.0",
+    "glob": "^10.3.0",
+    "minimist": "^1.2.8",
+    "simple-git": "^3.22.0",
+    "tar": "^7.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Crownpeak/dqm-react-component.git",
+    "directory": "mcp-server"
+  },
+  "bugs": {
+    "url": "https://github.com/Crownpeak/dqm-react-component/issues"
+  },
+  "homepage": "https://github.com/Crownpeak/dqm-react-component/tree/main/mcp-server#readme",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "crownpeak",
+    "dqm",
+    "quality-management",
+    "ai",
+    "copilot",
+    "documentation",
+    "probe"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
