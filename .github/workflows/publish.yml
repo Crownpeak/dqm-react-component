@@ -1,5 +1,12 @@
 name: Publish to NPM
 
+concurrency:
+  group: publish
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
 on:
   release:
     types: [published]
@@ -27,6 +34,15 @@ jobs:
     
     - name: Install dependencies
       run: npm i
+
+    - name: Builds Wiki
+      run: npm run wiki:build
+
+    - name: Publish Wiki
+      uses: Andrew-Chen-Wang/github-wiki-action@v4
+      with:
+        commit_message: "Update wiki for version ${{ github.event.release.tag_name }}"
+        path: ./wiki
 
     - uses: actions/checkout@v4
       name: Checkout Probe CLI Repository
