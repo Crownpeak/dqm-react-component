@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@probelabs/probe": "^0.6.0-rc128",
-    "@modelcontextprotocol/sdk": "^1.6.0",
+    "@modelcontextprotocol/sdk": "^1.25.2",
     "axios": "^1.6.0",
     "fs-extra": "^11.2.0",
     "glob": "^10.3.0",
