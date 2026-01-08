@@ -7,9 +7,11 @@ import {
   Github, 
   BookOpen, 
   ExternalLink,
-  Heart
+  Heart,
+  Cookie
 } from 'lucide-react';
 import Image from 'next/image';
+import * as CookieConsent from 'vanilla-cookieconsent';
 
 export function Footer() {
   const { t } = useTranslation('common');
@@ -33,6 +35,7 @@ export function Footer() {
     legal: [
       { key: 'imprint', href: 'https://www.crownpeak.com/richtlinien/impressum/', external: true },
       { key: 'privacy', href: 'https://www.crownpeak.com/richtlinien/datenschutzerklaerung/', external: true },
+      { key: 'cookieSettings', href: '#', external: false, isCookieSettings: true },
     ],
   };
   
@@ -133,15 +136,26 @@ export function Footer() {
                 <ul className="space-y-3 pt-2">
                   {links.legal.map((link) => (
                     <li key={link.key}>
-                      <a 
-                        href={link.href}
-                        target={link.external ? '_blank' : undefined}
-                        rel={link.external ? 'noopener noreferrer' : undefined}
-                        className="hover:text-white transition-colors text-sm inline-flex items-center gap-1"
-                      >
-                        {t(`footer.links.${link.key}`)}
-                        {link.external && <ExternalLink className="h-3 w-3" />}
-                      </a>
+                      {'isCookieSettings' in link && link.isCookieSettings ? (
+                        <button
+                          type="button"
+                          onClick={() => CookieConsent.showPreferences()}
+                          className="hover:text-white transition-colors text-sm inline-flex items-center gap-1 cursor-pointer bg-transparent border-none p-0 text-slate-300"
+                        >
+                          <Cookie className="h-3 w-3" />
+                          {t(`footer.links.${link.key}`)}
+                        </button>
+                      ) : (
+                        <a 
+                          href={link.href}
+                          target={link.external ? '_blank' : undefined}
+                          rel={link.external ? 'noopener noreferrer' : undefined}
+                          className="hover:text-white transition-colors text-sm inline-flex items-center gap-1"
+                        >
+                          {t(`footer.links.${link.key}`)}
+                          {link.external && <ExternalLink className="h-3 w-3" />}
+                        </a>
+                      )}
                     </li>
                   ))}
                 </ul>
