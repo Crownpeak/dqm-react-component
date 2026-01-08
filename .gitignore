@@ -73,9 +73,5 @@ desktop.ini
 .vscode/launch.json
 /Caddyfile
 
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-
 playwright-report/
 test-results/
