@@ -1,0 +1,7 @@
+# Robots.txt for Crownpeak DQM React Component Website
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://crownpeak.github.io/dqm-react-component/sitemap.xml

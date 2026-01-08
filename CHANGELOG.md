@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.4] - 2026-01-08
+
+### Added
+- **Marketing Website**: New Next.js marketing/documentation website deployed to GitHub Pages
+  - Hero section with animated feature highlights
+  - Interactive demo section with live sidebar preview
+  - Integration section with code examples and copy functionality
+  - Multi-language support (English, German, Spanish) using react-i18next
+  - Framer Motion animations throughout
+  - Built with Tailwind CSS and shadcn/ui components
+  - WCAG AA accessibility compliant (proper aria-labels, 4.5:1+ contrast ratios)
+  - Static export for GitHub Pages hosting
+- **AI Agent Documentation**: Added comprehensive Website section to `.github/copilot-instructions.md`
+
 ## [1.2.2] - 2026-01-08
 
 ### Fixed

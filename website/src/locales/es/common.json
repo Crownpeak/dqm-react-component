@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "title": "Crownpeak DQM React Component | Digital Quality Management",
+    "description": "Integre la gestión de calidad digital directamente en su aplicación React. Análisis en tiempo real para accesibilidad, SEO, calidad de contenido y más.",
+    "keywords": "DQM, React, Gestión de Calidad, Accesibilidad, WCAG, SEO, Crownpeak"
+  },
+  "hero": {
+    "badge": "Versión 1.2.0 — Ahora con traducción IA",
+    "title": "DQM",
+    "subtitle": "React Component",
+    "description": "Integre la <strong>Gestión de Calidad Digital</strong> directamente en su aplicación React. Análisis en tiempo real para accesibilidad, SEO, calidad de contenido y más.",
+    "demoButton": "Iniciar Demo en Vivo",
+    "docsButton": "Documentación",
+    "githubButton": "Ver en GitHub",
+    "scrollHint": "Desplazarse hacia abajo",
+    "features": {
+      "accessibility": "Compatible con WCAG 2.1 AA/AAA",
+      "performance": "Análisis ultrarrápido",
+      "secure": "Seguridad empresarial"
+    }
+  },
+  "features": {
+    "title": "Características Potentes",
+    "subtitle": "Todo lo que necesita para calidad digital",
+    "categories": {
+      "accessibility": "Accesibilidad",
+      "seo": "SEO",
+      "content": "Contenido",
+      "performance": "Rendimiento"
+    },
+    "items": {
+      "accessibility": {
+        "title": "Pruebas de Accesibilidad",
+        "description": "Pruebas automáticas de cumplimiento WCAG 2.1 AA/AAA con informes detallados de errores y soluciones."
+      },
+      "seo": {
+        "title": "Análisis SEO",
+        "description": "Análisis SEO integral incluyendo meta tags, datos estructurados y optimización para motores de búsqueda."
+      },
+      "performance": {
+        "title": "Métricas de Rendimiento",
+        "description": "Análisis de rendimiento en tiempo real con Core Web Vitals y recomendaciones de optimización."
+      },
+      "content": {
+        "title": "Calidad de Contenido",
+        "description": "Verificación de calidad de contenido, legibilidad, enlaces rotos y contenido duplicado."
+      },
+      "translation": {
+        "title": "Traducción IA",
+        "description": "Traducción automática de resultados de análisis usando OpenAI — soporta más de 40 idiomas.",
+        "badge": "NUEVO",
+        "tags": {
+          "autoDetect": "Detectar Idioma",
+          "summary": "Generación de Resumen",
+          "contextual": "Traducción Contextual"
+        }
+      },
+      "multilingual": {
+        "title": "UI Multilingüe",
+        "description": "Interfaz de usuario disponible en inglés, alemán y español con detección automática de idioma."
+      },
+      "qualityAnalysis": {
+        "title": "Análisis de Calidad",
+        "description": "Métricas de calidad completas con puntuaciones detalladas para cada categoría."
+      },
+      "errorHighlighting": {
+        "title": "Resaltado de Errores",
+        "description": "Resaltado visual de problemas directamente en el código fuente HTML."
+      },
+      "secureAuth": {
+        "title": "Autenticación Segura",
+        "description": "Gestión de sesiones en backend con almacenamiento seguro de credenciales y soporte Redis."
+      },
+      "widgetBundle": {
+        "title": "Widget Bundle",
+        "description": "Bundles IIFE/ESM independientes para integración CMS sin pipeline de compilación."
+      }
+    }
+  },
+  "demo": {
+    "title": "Pruébelo usted mismo",
+    "subtitle": "Experimente el poder de DQM",
+    "description": "Haga clic en el botón de abajo para abrir la barra lateral DQM interactiva y explorar las funciones con datos de ejemplo.",
+    "button": "Abrir Demo",
+    "hint": "La demostración usa datos simulados — no se realiza análisis real.",
+    "stats": {
+      "passed": "Aprobados",
+      "warnings": "Advertencias",
+      "errors": "Errores",
+      "totalScore": "Puntuación Total"
+    }
+  },
+  "integration": {
+    "title": "Integración Fácil",
+    "subtitle": "Comience en 5 minutos",
+    "installation": "Instalación",
+    "copy": "Copiar",
+    "copied": "¡Copiado!",
+    "fullDocs": "Documentación Completa",
+    "steps": {
+      "install": {
+        "title": "Instalar",
+        "description": "Instale el paquete vía npm o yarn."
+      },
+      "integrate": {
+        "title": "Integrar",
+        "description": "Agregue el componente DQMSidebar a su aplicación React."
+      },
+      "configure": {
+        "title": "Configurar",
+        "description": "Configure la clave API y el ID del sitio web."
+      },
+      "analyze": {
+        "title": "Analizar",
+        "description": "Comience a analizar y optimice su calidad."
+      }
+    },
+    "codeExample": {
+      "title": "Integración Simple",
+      "description": "Solo unas pocas líneas de código para comenzar:"
+    },
+    "tabs": {
+      "react": "React / Next.js",
+      "backend": "Auth Backend (Recomendado)",
+      "widget": "Widget Bundle (IIFE)",
+      "ai": "Funciones IA"
+    },
+    "codeComments": {
+      "forCms": "Para CMS como WordPress, Shopify, Drupal",
+      "aiTranslation": "Activar traducción IA",
+      "aiSummary": "Generación de resumen IA",
+      "secureServerSide": "Seguro: Claves API almacenadas en servidor"
+    }
+  },
+  "footer": {
+    "description": "Gestión de Calidad Digital profesional para aplicaciones React",
+    "documentation": "Documentación",
+    "github": "GitHub",
+    "npm": "Paquete NPM",
+    "contact": "Contacto",
+    "copyright": "© 2024 Crownpeak Technology GmbH. Todos los derechos reservados.",
+    "madeWith": "Hecho con",
+    "byTeam": "por el equipo de Crownpeak",
+    "columns": {
+      "product": "Producto",
+      "resources": "Recursos"
+    },
+    "navigation": {
+      "features": "Características",
+      "demo": "Demo",
+      "integration": "Integración"
+    },
+    "links": {
+      "docs": "Documentación",
+      "github": "Repositorio GitHub",
+      "npm": "Paquete NPM",
+      "website": "Sitio Web Crownpeak",
+      "dqmPlatform": "Plataforma DQM",
+      "support": "Soporte",
+      "imprint": "Aviso Legal",
+      "privacy": "Política de Privacidad"
+    }
+  },
+  "language": {
+    "name": "Idioma",
+    "select": "Seleccionar Idioma",
+    "en": "Inglés",
+    "de": "Alemán",
+    "es": "Español"
+  }
+}

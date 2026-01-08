@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "title": "Crownpeak DQM React Component | Digital Quality Management",
+    "description": "Integrieren Sie Digital Quality Management direkt in Ihre React-Anwendung. Echtzeit-Analyse für Accessibility, SEO, Content-Qualität und mehr.",
+    "keywords": "DQM, React, Quality Management, Accessibility, WCAG, SEO, Crownpeak"
+  },
+  "hero": {
+    "badge": "Version 1.2.0 — Jetzt mit KI-Übersetzung",
+    "title": "DQM",
+    "subtitle": "React Component",
+    "description": "Integrieren Sie <strong>Digital Quality Management</strong> direkt in Ihre React-Anwendung. Echtzeit-Analyse für Accessibility, SEO, Content-Qualität und mehr.",
+    "demoButton": "Live Demo starten",
+    "docsButton": "Dokumentation",
+    "githubButton": "Auf GitHub ansehen",
+    "scrollHint": "Nach unten scrollen",
+    "features": {
+      "accessibility": "WCAG 2.1 AA/AAA konform",
+      "performance": "Blitzschnelle Analyse",
+      "secure": "Enterprise-Sicherheit"
+    }
+  },
+  "features": {
+    "title": "Leistungsstarke Features",
+    "subtitle": "Alles für digitale Qualität",
+    "categories": {
+      "accessibility": "Barrierefreiheit",
+      "seo": "SEO",
+      "content": "Inhalt",
+      "performance": "Performance"
+    },
+    "items": {
+      "accessibility": {
+        "title": "Barrierefreiheit-Tests",
+        "description": "Automatische WCAG 2.1 AA/AAA Compliance-Tests mit detaillierten Fehlerberichten und Lösungen."
+      },
+      "seo": {
+        "title": "SEO-Analyse",
+        "description": "Umfassende SEO-Analyse inklusive Meta-Tags, strukturierten Daten und Suchmaschinenoptimierung."
+      },
+      "performance": {
+        "title": "Performance-Metriken",
+        "description": "Echtzeit-Performance-Analyse mit Core Web Vitals und Optimierungsempfehlungen."
+      },
+      "content": {
+        "title": "Content-Qualität",
+        "description": "Prüfung von Content-Qualität, Lesbarkeit, defekten Links und doppelten Inhalten."
+      },
+      "translation": {
+        "title": "KI-Übersetzung",
+        "description": "Automatische Übersetzung von Analyseergebnissen mit OpenAI — unterstützt über 40 Sprachen.",
+        "badge": "NEU",
+        "tags": {
+          "autoDetect": "Sprache erkennen",
+          "summary": "Zusammenfassung",
+          "contextual": "Kontextbezogen"
+        }
+      },
+      "multilingual": {
+        "title": "Mehrsprachige UI",
+        "description": "Benutzeroberfläche verfügbar auf Englisch, Deutsch und Spanisch mit automatischer Spracherkennung."
+      },
+      "qualityAnalysis": {
+        "title": "Qualitätsanalyse",
+        "description": "Umfassende Qualitätsmetriken mit detaillierten Scores für jede Kategorie."
+      },
+      "errorHighlighting": {
+        "title": "Fehlerhervorhebung",
+        "description": "Visuelle Hervorhebung von Problemen direkt im HTML-Quellcode."
+      },
+      "secureAuth": {
+        "title": "Sichere Authentifizierung",
+        "description": "Backend Session Management mit sicherer Credential-Speicherung und Redis-Support."
+      },
+      "widgetBundle": {
+        "title": "Widget Bundle",
+        "description": "Standalone IIFE/ESM Bundles für CMS-Integration ohne Build-Pipeline."
+      }
+    }
+  },
+  "demo": {
+    "title": "Selbst ausprobieren",
+    "subtitle": "Erleben Sie die Power von DQM",
+    "description": "Klicken Sie auf den Button unten, um die interaktive DQM-Sidebar zu öffnen und die Funktionen mit Beispieldaten zu erkunden.",
+    "button": "Demo öffnen",
+    "hint": "Die Demo verwendet Mock-Daten — es wird keine echte Analyse durchgeführt.",
+    "stats": {
+      "passed": "Bestanden",
+      "warnings": "Warnungen",
+      "errors": "Fehler",
+      "totalScore": "Gesamtscore"
+    }
+  },
+  "integration": {
+    "title": "Einfache Integration",
+    "subtitle": "In 5 Minuten startklar",
+    "installation": "Installation",
+    "copy": "Kopieren",
+    "copied": "Kopiert!",
+    "fullDocs": "Vollständige Dokumentation",
+    "steps": {
+      "install": {
+        "title": "Installieren",
+        "description": "Installieren Sie das Paket via npm oder yarn."
+      },
+      "integrate": {
+        "title": "Integrieren",
+        "description": "Fügen Sie die DQMSidebar-Komponente zu Ihrer React-App hinzu."
+      },
+      "configure": {
+        "title": "Konfigurieren",
+        "description": "Konfigurieren Sie API-Key und Website-ID."
+      },
+      "analyze": {
+        "title": "Analysieren",
+        "description": "Starten Sie die Analyse und optimieren Sie Ihre Qualität."
+      }
+    },
+    "codeExample": {
+      "title": "Einfache Integration",
+      "description": "Nur wenige Zeilen Code zum Loslegen:"
+    },
+    "tabs": {
+      "react": "React / Next.js",
+      "backend": "Backend Auth (Empfohlen)",
+      "widget": "Widget Bundle (IIFE)",
+      "ai": "KI-Features"
+    },
+    "codeComments": {
+      "forCms": "Für CMS wie WordPress, Shopify, Drupal",
+      "aiTranslation": "KI-Übersetzung aktivieren",
+      "aiSummary": "KI-Zusammenfassung",
+      "secureServerSide": "Sicher: API-Keys serverseitig gespeichert"
+    }
+  },
+  "footer": {
+    "description": "Professionelles Digital Quality Management für React-Anwendungen",
+    "documentation": "Dokumentation",
+    "github": "GitHub",
+    "npm": "NPM-Paket",
+    "contact": "Kontakt",
+    "copyright": "© 2024 Crownpeak Technology GmbH. Alle Rechte vorbehalten.",
+    "madeWith": "Erstellt mit",
+    "byTeam": "vom Crownpeak Team",
+    "columns": {
+      "product": "Produkt",
+      "resources": "Ressourcen"
+    },
+    "navigation": {
+      "features": "Features",
+      "demo": "Demo",
+      "integration": "Integration"
+    },
+    "links": {
+      "docs": "Dokumentation",
+      "github": "GitHub Repository",
+      "npm": "NPM-Paket",
+      "website": "Crownpeak Website",
+      "dqmPlatform": "DQM-Plattform",
+      "support": "Support",
+      "imprint": "Impressum",
+      "privacy": "Datenschutzerklärung"
+    }
+  },
+  "language": {
+    "name": "Sprache",
+    "select": "Sprache wählen",
+    "en": "Englisch",
+    "de": "Deutsch",
+    "es": "Spanisch"
+  }
+}

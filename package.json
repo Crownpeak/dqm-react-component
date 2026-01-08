@@ -1,6 +1,6 @@
 {
   "name": "@crownpeak/dqm-react-component",
-  "version": "1.2.2",
+  "version": "1.2.4",
   "private": false,
   "description": "A React component for Crownpeak Digital Quality Management (DQM) integration",
   "type": "module",
@@ -84,7 +84,7 @@
     "test:e2e:debug": "playwright test --debug",
     "wiki:build": "./scripts/wiki-build.sh",
     "wiki:deploy": "./scripts/wiki-deploy.sh",
-    "setVersion": "npm version --workspaces --no-git-tag-version",
+    "setVersion": "node ./scripts/npm-set-version.mjs",
     "licenses:generate": "generate-license-file --config .glfrc.json",
     "licenses:check": "license-checker --onlyAllow 'MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;0BSD;Unlicense;CC0-1.0;CC-BY-3.0;CC-BY-4.0;Python-2.0;BlueOak-1.0.0;Zlib;WTFPL' --production",
     "licenses:check:all": "npm run licenses:check && npm run licenses:check --prefix mcp-server",
@@ -92,7 +92,8 @@
     "prepare": "husky"
   },
   "workspaces": [
-    "mcp-server"
+    "mcp-server",
+    "website"
   ],
   "peerDependencies": {
     "@mui/icons-material": ">=5.0.0",

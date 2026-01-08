@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "title": "Crownpeak DQM React Component | Digital Quality Management",
+    "description": "Integrate Digital Quality Management directly into your React application. Real-time analysis for Accessibility, SEO, Content Quality, and more.",
+    "keywords": "DQM, React, Quality Management, Accessibility, WCAG, SEO, Crownpeak"
+  },
+  "hero": {
+    "badge": "Version 1.2.0 — Now with AI Translation",
+    "title": "DQM",
+    "subtitle": "React Component",
+    "description": "Integrate <strong>Digital Quality Management</strong> directly into your React application. Real-time analysis for Accessibility, SEO, Content Quality, and more.",
+    "demoButton": "Start Live Demo",
+    "docsButton": "Documentation",
+    "githubButton": "View on GitHub",
+    "scrollHint": "Scroll Down",
+    "features": {
+      "accessibility": "WCAG 2.1 AA/AAA compliant",
+      "performance": "Lightning-fast analysis",
+      "secure": "Enterprise-grade security"
+    }
+  },
+  "features": {
+    "title": "Powerful Features",
+    "subtitle": "Everything you need for digital quality",
+    "categories": {
+      "accessibility": "Accessibility",
+      "seo": "SEO",
+      "content": "Content",
+      "performance": "Performance"
+    },
+    "items": {
+      "accessibility": {
+        "title": "Accessibility Testing",
+        "description": "Automatic WCAG 2.1 AA/AAA compliance testing with detailed error reports and solutions."
+      },
+      "seo": {
+        "title": "SEO Analysis",
+        "description": "Comprehensive SEO analysis including meta tags, structured data, and search engine optimization."
+      },
+      "performance": {
+        "title": "Performance Metrics",
+        "description": "Real-time performance analysis with Core Web Vitals and optimization recommendations."
+      },
+      "content": {
+        "title": "Content Quality",
+        "description": "Check content quality, readability, broken links, and duplicate content."
+      },
+      "translation": {
+        "title": "AI Translation",
+        "description": "Automatic translation of analysis results using OpenAI — supports over 40 languages.",
+        "badge": "NEW",
+        "tags": {
+          "autoDetect": "Auto-Detect Language",
+          "summary": "Summary Generation",
+          "contextual": "Contextual Translation"
+        }
+      },
+      "multilingual": {
+        "title": "Multilingual UI",
+        "description": "User interface available in English, German, and Spanish with automatic language detection."
+      },
+      "qualityAnalysis": {
+        "title": "Quality Analysis",
+        "description": "Comprehensive quality metrics with detailed scores for each category."
+      },
+      "errorHighlighting": {
+        "title": "Error Highlighting",
+        "description": "Visual highlighting of issues directly in the HTML source code."
+      },
+      "secureAuth": {
+        "title": "Secure Authentication",
+        "description": "Backend session management with secure credential storage and Redis support."
+      },
+      "widgetBundle": {
+        "title": "Widget Bundle",
+        "description": "Standalone IIFE/ESM bundles for CMS integration without build pipeline."
+      }
+    }
+  },
+  "demo": {
+    "title": "Try it yourself",
+    "subtitle": "Experience the power of DQM",
+    "description": "Click the button below to open the interactive DQM Sidebar and explore the features with sample data.",
+    "button": "Open Demo",
+    "hint": "The demo uses mock data — no real analysis is performed.",
+    "stats": {
+      "passed": "Passed",
+      "warnings": "Warnings",
+      "errors": "Errors",
+      "totalScore": "Total Score"
+    }
+  },
+  "integration": {
+    "title": "Easy Integration",
+    "subtitle": "Get started in 5 minutes",
+    "installation": "Installation",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "fullDocs": "Full Documentation",
+    "steps": {
+      "install": {
+        "title": "Install",
+        "description": "Install the package via npm or yarn."
+      },
+      "integrate": {
+        "title": "Integrate",
+        "description": "Add the DQMSidebar component to your React app."
+      },
+      "configure": {
+        "title": "Configure",
+        "description": "Configure API key and website ID."
+      },
+      "analyze": {
+        "title": "Analyze",
+        "description": "Start analyzing and optimize your quality."
+      }
+    },
+    "codeExample": {
+      "title": "Simple Integration",
+      "description": "Just a few lines of code to get started:"
+    },
+    "tabs": {
+      "react": "React / Next.js",
+      "backend": "Backend Auth (Recommended)",
+      "widget": "Widget Bundle (IIFE)",
+      "ai": "AI Features"
+    },
+    "codeComments": {
+      "forCms": "For CMS like WordPress, Shopify, Drupal",
+      "aiTranslation": "Enable AI Translation",
+      "aiSummary": "AI Summary Generation",
+      "secureServerSide": "Secure: API keys stored server-side"
+    }
+  },
+  "footer": {
+    "description": "Professional Digital Quality Management for React applications",
+    "documentation": "Documentation",
+    "github": "GitHub",
+    "npm": "NPM Package",
+    "contact": "Contact",
+    "copyright": "© 2024 Crownpeak Technology GmbH. All rights reserved.",
+    "madeWith": "Made with",
+    "byTeam": "by the Crownpeak Team",
+    "columns": {
+      "product": "Product",
+      "resources": "Resources"
+    },
+    "navigation": {
+      "features": "Features",
+      "demo": "Demo",
+      "integration": "Integration"
+    },
+    "links": {
+      "docs": "Documentation",
+      "github": "GitHub Repository",
+      "npm": "NPM Package",
+      "website": "Crownpeak Website",
+      "dqmPlatform": "DQM Platform",
+      "support": "Support",
+      "imprint": "Imprint",
+      "privacy": "Privacy Policy"
+    }
+  },
+  "language": {
+    "name": "Language",
+    "select": "Select Language",
+    "en": "English",
+    "de": "German",
+    "es": "Spanish"
+  }
+}
