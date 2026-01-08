@@ -67,7 +67,7 @@ export const metadata: Metadata = {
     siteName: "Crownpeak DQM React Component",
     images: [
       {
-        url: "/og-image.png",
+        url: "og-image.png",
         width: 1200,
         height: 630,
         alt: "Crownpeak DQM React Component - Digital Quality Management",
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Crownpeak DQM React Component",
     description: "Integrate Digital Quality Management directly into your React application.",
-    images: ["/og-image.png"],
+    images: ["og-image.png"],
     creator: "@crownpeak",
   },
   alternates: {

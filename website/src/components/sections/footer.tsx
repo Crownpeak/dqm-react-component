@@ -43,7 +43,7 @@ export function Footer() {
           {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-3 mb-4">
-              <Image className="rounded-xs" src="/crownpeak_icon.png" alt="DQM React Logo" width={40} height={40} />  
+              <Image className="rounded-xs" src="crownpeak_icon.png" alt="DQM React Logo" width={40} height={40} />  
               <div>
                 <p className="font-bold text-white">DQM React</p>
                 <p className="text-xs text-slate-400">by Crownpeak</p>

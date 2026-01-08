@@ -67,7 +67,7 @@ export function HeroSection({ onOpenDemo }: HeroSectionProps) {
           className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-purple-200"
         >
           <span className="inline-flex gap-2 items-center justify-center">
-            <Image src="/logo_crownpeak.svg" alt="Crownpeak Logo" width={350} height={100} style={{top: 10, position: 'relative'}} />
+            <Image src="logo_crownpeak.svg" alt="Crownpeak Logo" width={350} height={100} style={{top: 10, position: 'relative'}} />
             {t('hero.title')}
           </span>
           <br />
