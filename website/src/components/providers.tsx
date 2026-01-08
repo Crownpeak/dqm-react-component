@@ -19,7 +19,7 @@ function MSWProvider({ children }: { children: React.ReactNode }) {
 
       try {
         // Prüfe ob Service Worker bereits registriert ist
-        const existingRegistration = await navigator.serviceWorker.getRegistration('/mockServiceWorker.js');
+        const existingRegistration = await navigator.serviceWorker.getRegistration('mockServiceWorker.js');
         
         if (existingRegistration?.active) {
           console.log('[MSW] Service Worker bereits aktiv, verwende bestehende Registrierung');
@@ -30,7 +30,7 @@ function MSWProvider({ children }: { children: React.ReactNode }) {
             onUnhandledRequest: 'bypass',
             quiet: true,
             serviceWorker: {
-              url: '/mockServiceWorker.js',
+              url: 'mockServiceWorker.js',
               options: {
                 scope: '/',
               },
@@ -50,7 +50,7 @@ function MSWProvider({ children }: { children: React.ReactNode }) {
           onUnhandledRequest: 'bypass',
           quiet: true,
           serviceWorker: {
-            url: '/mockServiceWorker.js',
+            url: 'mockServiceWorker.js',
             options: {
               scope: '/',
             },
