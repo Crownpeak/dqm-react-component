@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-01-08
+
+### Fixed
+- **AI Translation Reliability**: Resolved issue where AI translations were not triggered automatically
+  - Translation now starts automatically when AI summary completes
+  - Translation now starts automatically when AI engine becomes ready
+  - Fixed race condition where blocked translations would never retry
+
+### Added
+- **300ms Debounce**: API calls are now debounced to prevent accidental spam when state changes rapidly
+- **Reactive State Management**: `summaryGenerating` and `engineIsReady` are now proper effect dependencies
+- **Automatic Retry Logic**: Translation automatically restarts when blocking conditions are resolved
+- **Unit Tests**: 13 new tests for `useAITranslation` hook covering debounce, blocking, cache, and abort behavior
+- **Integration Tests**: 6 new tests for Summary→Translation flow with API call counting
+
+### Changed
+- AI Translation hook now uses reactive dependencies instead of refs for blocking conditions
+- Improved cleanup on component unmount (cancels pending debounce timers and aborts requests)
+
 ## [1.2.0] - 2026-01-07
 
 ### Added
