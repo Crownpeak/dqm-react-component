@@ -53,6 +53,8 @@ export const useAITranslation = (options: UseAITranslationOptions): UseAITransla
   const abortRef = useRef<AbortController | null>(null);
   const hasRunForKeyRef = useRef<string | null>(null);
   const isRunningRef = useRef(false);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevSummaryGeneratingRef = useRef(summaryGenerating);
 
   // Callbacks for data changes
   const onDataChangeRef = useRef<UseAITranslationReturn['onDataChange']>(undefined);
@@ -89,6 +91,17 @@ export const useAITranslation = (options: UseAITranslationOptions): UseAITransla
   const assetId = originalData?.assetId ?? null;
   const translationNeeded = targetLang !== 'en';
   const isTranslating = translatingIds.size > 0;
+  const engineIsReady = engine.isReady;
+
+  // Reset hasRunForKeyRef when summary stops blocking (allows retry)
+  useEffect(() => {
+    if (prevSummaryGeneratingRef.current && !summaryGenerating) {
+      // Summary just finished - reset to allow translation to run
+      logger.debug('Translation: summary finished, resetting hasRunForKeyRef for retry');
+      hasRunForKeyRef.current = null;
+    }
+    prevSummaryGeneratingRef.current = summaryGenerating;
+  }, [summaryGenerating]);
 
   /**
    * Stop ongoing translation.
@@ -182,9 +195,16 @@ export const useAITranslation = (options: UseAITranslationOptions): UseAITransla
 
   /**
    * Main translation effect - RUNS ONCE per unique key.
+   * Uses debounce to prevent API spam when dependencies change rapidly.
    */
   useEffect(() => {
     const runKey = `${assetId}:${targetLang}:${modelId}:${mode}`;
+
+    // Cleanup debounce timer on any change
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
 
     // Skip if not enabled
     if (!enabled) {
@@ -199,8 +219,11 @@ export const useAITranslation = (options: UseAITranslationOptions): UseAITransla
     // Skip if no data
     if (!assetId) return;
 
-    // Skip if summary generating
-    if (summaryGeneratingRef.current) return;
+    // Skip if summary generating (now reactive!)
+    if (summaryGenerating) {
+      logger.debug('Translation: waiting for summary to complete');
+      return;
+    }
 
     // Skip if not needed
     if (!translationNeeded) {
@@ -216,13 +239,16 @@ export const useAITranslation = (options: UseAITranslationOptions): UseAITransla
     // Skip if already ran for this key
     if (hasRunForKeyRef.current === runKey) return;
 
-    // Skip if engine not ready
-    if (!engineRef.current.isReady || !engineRef.current.client) return;
+    // Skip if engine not ready (now reactive!)
+    if (!engineIsReady || !engineRef.current.client) {
+      logger.debug('Translation: engine not ready yet');
+      return;
+    }
 
     const data = originalDataRef.current;
     if (!data) return;
 
-    // Check cache
+    // Check cache first (no debounce needed for cache hit)
     const cacheKey = makeCacheKey();
     const cached = cacheManagerRef.current.assetCache.get(cacheKey);
     if (cached) {
@@ -237,74 +263,112 @@ export const useAITranslation = (options: UseAITranslationOptions): UseAITransla
       return;
     }
 
-    // Mark as running BEFORE async work
-    hasRunForKeyRef.current = runKey;
-    isRunningRef.current = true;
+    // Debounce: wait 300ms before starting translation
+    // This prevents API spam when multiple dependencies change rapidly
+    logger.debug('Translation: scheduling with 300ms debounce');
+    
+    debounceTimerRef.current = setTimeout(() => {
+      debounceTimerRef.current = null;
+      
+      // Re-check ALL conditions after debounce (they may have changed)
+      if (!enabledRef.current) {
+        logger.debug('Translation: cancelled after debounce - disabled');
+        return;
+      }
+      if (summaryGeneratingRef.current) {
+        logger.debug('Translation: cancelled after debounce - summary running');
+        return;
+      }
+      if (isRunningRef.current) {
+        logger.debug('Translation: cancelled after debounce - already running');
+        return;
+      }
+      if (hasRunForKeyRef.current === runKey) {
+        logger.debug('Translation: cancelled after debounce - already ran for key');
+        return;
+      }
+      if (!engineRef.current.isReady || !engineRef.current.client) {
+        logger.debug('Translation: cancelled after debounce - engine not ready');
+        return;
+      }
 
-    stop();
-    const controller = new AbortController();
-    abortRef.current = controller;
+      const currentData = originalDataRef.current;
+      if (!currentData) return;
 
-    setTranslatingIds(new Set());
-    setTranslatedIds(new Set());
-    setError(null);
-    setProgress(null);
+      // Mark as running BEFORE async work
+      hasRunForKeyRef.current = runKey;
+      isRunningRef.current = true;
 
-    logger.debug('Translation: start (once)');
+      stop();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
-    const client = engineRef.current.client!;
-    const runWithLock = engineRef.current.runWithLock;
+      setTranslatingIds(new Set());
+      setTranslatedIds(new Set());
+      setError(null);
+      setProgress(null);
 
-    runWithLock(async () => translateDqmResults({
-      client,
-      data,
-      targetLanguage: targetLangRef.current,
-      modelId: modelIdRef.current,
-      maxConcurrentBatches: 3,
-      maxItemsPerBatch: 12,
-      forceSerial: false,
-      cache: persistentCacheRef.current,
-      computeBudgetMs: computeBudgetMsRef.current,
-      signal: controller.signal,
-      onProgress: (prog) => setProgress(prog),
-      onBatchStatus: () => {
-        // Batch status tracking not needed for API backend
-      },
-      onPartialResult: () => {
-        // Partial results not needed for API backend
-      },
-    }))
-      .then(({ data: translated, progress: finalProgress }) => {
-        if (controller.signal.aborted) return;
-        logger.debug('Translation: done');
-        cacheManagerRef.current.assetCache.set(cacheKey, translated);
-        setTranslatedData(translated);
-        if (finalProgress.isPartial) {
-          setError(
-            modeRef.current === 'full'
-              ? tRef.current('translation_incomplete')
-              : tRef.current('translation_partial'),
-          );
-        }
-        setTranslatingIds(new Set());
-        setTranslatedIds(new Set());
-      })
-      .catch((err) => {
-        if (controller.signal.aborted) return;
-        logger.error('Translation: failed', err);
-        setError(err instanceof Error ? err.message : String(err));
-        setTranslatedData(data);
-        setTranslatingIds(new Set());
-        setTranslatedIds(new Set());
-      })
-      .finally(() => {
-        isRunningRef.current = false;
-      });
+      logger.debug('Translation: starting API call');
+
+      const client = engineRef.current.client!;
+      const runWithLock = engineRef.current.runWithLock;
+
+      runWithLock(async () => translateDqmResults({
+        client,
+        data: currentData,
+        targetLanguage: targetLangRef.current,
+        modelId: modelIdRef.current,
+        maxConcurrentBatches: 3,
+        maxItemsPerBatch: 12,
+        forceSerial: false,
+        cache: persistentCacheRef.current,
+        computeBudgetMs: computeBudgetMsRef.current,
+        signal: controller.signal,
+        onProgress: (prog) => setProgress(prog),
+        onBatchStatus: () => {
+          // Batch status tracking not needed for API backend
+        },
+        onPartialResult: () => {
+          // Partial results not needed for API backend
+        },
+      }))
+        .then(({ data: translated, progress: finalProgress }) => {
+          if (controller.signal.aborted) return;
+          logger.debug('Translation: done');
+          cacheManagerRef.current.assetCache.set(cacheKey, translated);
+          setTranslatedData(translated);
+          if (finalProgress.isPartial) {
+            setError(
+              modeRef.current === 'full'
+                ? tRef.current('translation_incomplete')
+                : tRef.current('translation_partial'),
+            );
+          }
+          setTranslatingIds(new Set());
+          setTranslatedIds(new Set());
+        })
+        .catch((err) => {
+          if (controller.signal.aborted) return;
+          logger.error('Translation: failed', err);
+          setError(err instanceof Error ? err.message : String(err));
+          setTranslatedData(currentData);
+          setTranslatingIds(new Set());
+          setTranslatedIds(new Set());
+        })
+        .finally(() => {
+          isRunningRef.current = false;
+        });
+    }, 300); // 300ms debounce to prevent API spam
 
     return () => {
-      controller.abort();
+      // Cleanup: cancel debounce timer and abort any running request
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      abortRef.current?.abort();
     };
-  }, [assetId, targetLang, modelId, mode, enabled, translationNeeded, runNonce, makeCacheKey, stop]);
+  }, [assetId, targetLang, modelId, mode, enabled, translationNeeded, runNonce, makeCacheKey, stop, summaryGenerating, engineIsReady]);
 
   return {
     translatedData,

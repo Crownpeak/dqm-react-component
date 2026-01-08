@@ -260,12 +260,25 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
     
     const [openAiSettingsExpanded, setOpenAiSettingsExpanded] = useState<boolean>(summaryEnabled);
 
+    // Track previous summaryBlockingTranslation state for restart logic
+    const prevSummaryBlockingRef = useRef(summaryBlockingTranslation);
+
     // Give summary absolute priority: stop translation when summary is generating/restarting.
     useEffect(() => {
         if (summaryBlockingTranslation) {
             stopTranslation();
         }
     }, [summaryBlockingTranslation, stopTranslation]);
+
+    // Restart translation when summary finishes (summaryBlockingTranslation: true → false)
+    useEffect(() => {
+        if (prevSummaryBlockingRef.current && !summaryBlockingTranslation) {
+            // Summary just finished - restart translation
+            logger.debug('DQMSidebar: summary finished, restarting translation');
+            restartTranslation();
+        }
+        prevSummaryBlockingRef.current = summaryBlockingTranslation;
+    }, [summaryBlockingTranslation, restartTranslation]);
 
     // Translation error display
     const translationError = engineState === 'error' ? 'AI engine failed to initialize' : null;
