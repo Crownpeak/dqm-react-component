@@ -6,6 +6,14 @@ import { store } from '@/store';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '@/i18n/config';
 
+// Dynamischer Base Path für GitHub Pages
+const getBasePath = () => {
+  if (typeof window === 'undefined') return '';
+  // Auf GitHub Pages: /dqm-react-component/, lokal: /
+  const path = process.env.NEXT_PUBLIC_BASE_PATH || '';
+  return path.endsWith('/') ? path : `${path}/`;
+};
+
 function MSWProvider({ children }: { children: React.ReactNode }) {
   const [isMswReady, setIsMswReady] = useState(false);
   const workerRef = useRef<Awaited<typeof import('@/mocks/browser')>['worker'] | null>(null);
@@ -17,9 +25,13 @@ function MSWProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      const basePath = getBasePath();
+      const serviceWorkerUrl = `${basePath}mockServiceWorker.js`;
+      const scope = basePath || '/';
+
       try {
         // Prüfe ob Service Worker bereits registriert ist
-        const existingRegistration = await navigator.serviceWorker.getRegistration('mockServiceWorker.js');
+        const existingRegistration = await navigator.serviceWorker.getRegistration(serviceWorkerUrl);
         
         if (existingRegistration?.active) {
           console.log('[MSW] Service Worker bereits aktiv, verwende bestehende Registrierung');
@@ -30,9 +42,9 @@ function MSWProvider({ children }: { children: React.ReactNode }) {
             onUnhandledRequest: 'bypass',
             quiet: true,
             serviceWorker: {
-              url: 'mockServiceWorker.js',
+              url: serviceWorkerUrl,
               options: {
-                scope: '/',
+                scope: scope,
               },
             },
             findWorker: (scriptURL) => scriptURL.includes('mockServiceWorker'),
@@ -50,9 +62,9 @@ function MSWProvider({ children }: { children: React.ReactNode }) {
           onUnhandledRequest: 'bypass',
           quiet: true,
           serviceWorker: {
-            url: 'mockServiceWorker.js',
+            url: serviceWorkerUrl,
             options: {
-              scope: '/',
+              scope: scope,
             },
           },
           findWorker: (scriptURL) => scriptURL.includes('mockServiceWorker'),
