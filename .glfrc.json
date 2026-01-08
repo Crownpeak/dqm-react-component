@@ -1,5 +1,5 @@
 {
-  "inputs": ["./package.json", "./mcp-server/package.json"],
+  "inputs": ["./package.json", "./mcp-server/package.json", "./website/package.json"],
   "output": "./THIRD_PARTY_LICENSES.txt",
   "lineEnding": "lf",
   "omitVersions": false,
