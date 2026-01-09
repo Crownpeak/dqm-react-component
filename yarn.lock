@@ -395,10 +395,10 @@
     tailwind-merge "^3.4.0"
     vanilla-cookieconsent "^3.1.0"
 
-"@crownpeak/dqm-react-component@^1.2.2":
-  version "1.2.2"
-  resolved "https://registry.npmjs.org/@crownpeak/dqm-react-component/-/dqm-react-component-1.2.2.tgz"
-  integrity sha512-TOekzXfF1tOZWSijmoArk0F+lkWw7DfR/QJpTLN2sFodCfs9rmJB2tZvV0hzxk3Y9EO20S9G45k1JGNBfFp9ZA==
+"@crownpeak/dqm-react-component@^1.3.0":
+  version "1.3.0"
+  resolved "https://registry.npmjs.org/@crownpeak/dqm-react-component/-/dqm-react-component-1.3.0.tgz"
+  integrity sha512-GGlOMFtJJ5VDbQp/nwKSYL58FoOpRK1raX5fsI8jFEEMjROirYj3iGX8i/r3kvqi41rxwhMJ1h4WJgOC0tNqcA==
   dependencies:
     "@emotion/react" "^11.14.0"
     "@emotion/styled" "^11.14.1"
