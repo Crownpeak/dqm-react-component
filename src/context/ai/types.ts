@@ -6,6 +6,7 @@ import type { AnalysisData } from '../../types';
 import type { TranslationProgress, SummaryStats } from '../../utils/translationUtils';
 import type { JsonChatClient } from '../../utils/aiJsonClient';
 import type { TranslationCache } from '../../utils/translationCache';
+import type { ReasoningEffort } from '../../utils/modelCapabilities';
 
 // ============================================================================
 // AI Backend & Model Types
@@ -156,6 +157,7 @@ export interface UseAISummaryReturn {
 }
 
 export type { SummaryStats } from '../../utils/translationUtils';
+export type { ReasoningEffort } from '../../utils/modelCapabilities';
 
 // ============================================================================
 // AI Context Types
@@ -181,6 +183,8 @@ export interface AIContextValue {
   setOpenAiModel: (value: string) => void;
   openAiBaseUrl: string;
   setOpenAiBaseUrl: (value: string) => void;
+  reasoningEffort: ReasoningEffort;
+  setReasoningEffort: (value: ReasoningEffort) => void;
 
   // Derived Values
   targetLang: string;

@@ -122,7 +122,7 @@ config={{
     translation: {
         enabled: true,              // MUST be true
         apiKey: 'sk-...',           // Valid OpenAI API key
-        model: 'gpt-4o-mini',       // Correct model name
+        model: 'gpt-5.2',           // Correct model name
         targetLanguage: 'de',       // ISO 639-1 code
         mode: 'fast',
     },
@@ -144,14 +144,14 @@ console.log('OpenAI API Key Set:', !!localStorage.getItem('dqm_openai_apiKey'));
 **A:** Try these optimizations:
 
 1. **Switch to Fast Mode**: `mode: 'fast'` (15s timeout vs 120s for `'full'`)
-2. **Use a faster model**: `gpt-4o-mini` is optimized for speed
+2. **Use a faster model**: `gpt-5.2` is optimized for speed and cost-efficiency
 
 ```typescript
 // Optimize for speed
 translation: {
     enabled: true,
     apiKey: 'sk-...',
-    model: 'gpt-4o-mini',       // Fast + cheap
+    model: 'gpt-5.2',             // Fast + cheap
     targetLanguage: 'de',
     mode: 'fast',               // 15s timeout
 }
@@ -164,7 +164,7 @@ translation: {
 **A:** Check these:
 
 1. **OpenAI API Key**: Summary requires valid OpenAI key
-2. **Model**: Ensure model supports JSON mode (`gpt-4o-mini`, `gpt-4o`, `gpt-4.1`)
+2. **Model**: Ensure model supports JSON mode (`gpt-5.2`, `gpt-4o`, `gpt-4.1`)
 3. **Timeout**: Increase timeout if analysis has many checkpoints
 
 ```typescript

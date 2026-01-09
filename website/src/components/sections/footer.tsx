@@ -29,8 +29,7 @@ export function Footer() {
     ],
     company: [
       { key: 'website', href: 'https://www.crownpeak.com', external: true },
-      { key: 'dqmPlatform', href: 'https://www.crownpeak.com/products/digital-quality-management', external: true },
-      { key: 'support', href: 'https://www.crownpeak.com/support', external: true },
+      { key: 'dqmPlatform', href: 'https://www.crownpeak.com/firstspirit/produkte/barrierefreiheit/digitale-barrierefreiheit-und-qualitaetsmanagement-dqm/', external: true },
     ],
     legal: [
       { key: 'imprint', href: 'https://www.crownpeak.com/richtlinien/impressum/', external: true },

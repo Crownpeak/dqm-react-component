@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-01-09
+
+### Added
+- **GPT-5.2 Support**: Default AI model upgraded from `gpt-4.1-mini` to `gpt-5.2`
+  - 1M token context window enables larger translation batches and fewer API calls
+  - New `reasoning_effort` parameter (`low`/`medium`/`high`) for GPT-5 models
+  - Automatic API adaptation for GPT-5 vs GPT-4 differences:
+    - Token parameter: `max_completion_tokens` (GPT-5) vs `max_tokens` (GPT-4)
+    - Structured output: `json_schema` (GPT-5) vs `json_object` (GPT-4)
+    - System role: `developer` (GPT-5) vs `system` (GPT-4)
+  - 50,000 token context budget (vs 12,000 for GPT-4o)
+- **Model Capabilities Module**: New `src/utils/modelCapabilities.ts` for centralized model detection
+  - `isGPT5Model()`, `isReasoningModel()` utility functions
+  - `getModelCapabilities()` returns full capability info per model
+  - `buildTokenParams()`, `buildReasoningParams()`, `getSystemRole()` helpers
+- **Reasoning Effort UI**: New setting in AI Settings dialog (only visible for GPT-5 models)
+  - Persisted to `localStorage` as `dqm_reasoning_effort`
+  - Full i18n support (EN/DE/ES)
+- **MCP Server Feature**: Added MCP Server section to website features
+  - New feature card with link to documentation
+  - Translations for all 3 languages
+
+### Changed
+- **AI Settings Dialog**: GPT-5.2 now shown with "NEW" badge in model selector
+- **AI Summary Card**: Improved layout with column flex direction for better readability
+- **Website Hero Badge**: Updated from version number to "GPT-5.2 Powered AI"
+- **Website MSW Provider**: Refactored to `useMSW()` hook for better lifecycle control
+  - MSW now starts only when sidebar opens
+  - MSW resets completely when sidebar closes
+- **Footer Links**: Updated Crownpeak DQM Platform URL to German FirstSpirit product page
+
+### Fixed
+- **Translation Feature Descriptions**: Updated to reflect GPT-5.2 capabilities
+- **Website Feature Cards**: Added MCP Server feature with external documentation link
+- **Accessibility**: Added `aria-label` to MCP Server feature link
+
 ## [1.2.4] - 2026-01-08
 
 ### Added

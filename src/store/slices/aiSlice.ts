@@ -4,6 +4,7 @@
  * Manages AI feature state including settings, summaries, and translation.
  */
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import type { ReasoningEffort } from '../../utils/modelCapabilities';
 
 export type AIProvider = 'openai' | 'none';
 export type TranslationProvider = 'openai' | 'none';
@@ -19,6 +20,8 @@ export interface AISettings {
   enabled: boolean;
   /** Translation provider */
   translationProvider: TranslationProvider;
+  /** Reasoning effort for GPT-5 models */
+  reasoningEffort: ReasoningEffort;
 }
 
 export interface AISummary {
@@ -50,9 +53,10 @@ export interface AISliceState {
 const initialSettings: AISettings = {
   provider: 'none',
   openaiApiKey: null,
-  openaiModel: 'gpt-4.1-mini',
+  openaiModel: 'gpt-5.2',
   enabled: false,
   translationProvider: 'none',
+  reasoningEffort: 'low',
 };
 
 const initialState: AISliceState = {
@@ -70,6 +74,7 @@ const AI_STORAGE_KEYS = {
   openaiApiKey: 'dqm_openai_apiKey',
   openaiModel: 'dqm_openai_model',
   translationProvider: 'dqm_translation_provider',
+  reasoningEffort: 'dqm_reasoning_effort',
 } as const;
 
 export const aiSlice = createSlice({
@@ -104,6 +109,11 @@ export const aiSlice = createSlice({
     /** Set translation provider */
     setTranslationProvider: (state, action: PayloadAction<TranslationProvider>) => {
       state.settings.translationProvider = action.payload;
+    },
+
+    /** Set reasoning effort (for GPT-5 models) */
+    setReasoningEffort: (state, action: PayloadAction<ReasoningEffort>) => {
+      state.settings.reasoningEffort = action.payload;
     },
 
     /** Open settings dialog */
@@ -180,6 +190,7 @@ export const aiSlice = createSlice({
         openaiApiKey?: string | null;
         openaiModel?: string;
         translationProvider?: TranslationProvider;
+        reasoningEffort?: ReasoningEffort;
       }>
     ) => {
       if (action.payload.provider) {
@@ -195,6 +206,9 @@ export const aiSlice = createSlice({
       if (action.payload.translationProvider) {
         state.settings.translationProvider = action.payload.translationProvider;
       }
+      if (action.payload.reasoningEffort) {
+        state.settings.reasoningEffort = action.payload.reasoningEffort;
+      }
     },
   },
 });
@@ -205,6 +219,7 @@ export const {
   setOpenAIApiKey,
   setOpenAIModel,
   setTranslationProvider,
+  setReasoningEffort,
   openSettings,
   closeSettings,
   toggleSettings,
@@ -226,6 +241,7 @@ export const selectAIProvider = (state: { ai: AISliceState }) => state.ai.settin
 export const selectAIEnabled = (state: { ai: AISliceState }) => state.ai.settings.enabled;
 export const selectOpenAIApiKey = (state: { ai: AISliceState }) => state.ai.settings.openaiApiKey;
 export const selectOpenAIModel = (state: { ai: AISliceState }) => state.ai.settings.openaiModel;
+export const selectReasoningEffort = (state: { ai: AISliceState }) => state.ai.settings.reasoningEffort;
 export const selectTranslationProvider = (state: { ai: AISliceState }) =>
   state.ai.settings.translationProvider;
 export const selectIsSettingsOpen = (state: { ai: AISliceState }) => state.ai.isSettingsOpen;

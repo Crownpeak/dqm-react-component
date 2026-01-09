@@ -351,7 +351,7 @@
   integrity sha512-q5P52BYb1hwVWE6dtID7VvuJWrlfbCv4klj7BjUUOqMz4jbSZD4C9fJ9lRjL2jnBGTg+gDDlaXN51rkWcLk4fg==
 
 "@crownpeak/dqm-react-component-dev-mcp@file:/Volumes/repositories/e-Spirit/solutions/crownpeak-dqm-react-component/mcp-server":
-  version "1.2.4"
+  version "1.3.0"
   resolved "file:mcp-server"
   dependencies:
     "@modelcontextprotocol/sdk" "^1.25.2"
@@ -364,7 +364,7 @@
     tar "^7.0.0"
 
 "@crownpeak/dqm-react-component-website@file:/Volumes/repositories/e-Spirit/solutions/crownpeak-dqm-react-component/website":
-  version "1.2.4"
+  version "1.3.0"
   resolved "file:website"
   dependencies:
     "@crownpeak/dqm-react-component" "^1.2.2"

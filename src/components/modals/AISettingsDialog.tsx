@@ -19,6 +19,7 @@ import {
   DialogTitle,
   FormControl,
   FormControlLabel,
+  FormHelperText,
   IconButton,
   InputLabel,
   LinearProgress,
@@ -26,6 +27,7 @@ import {
   Select,
   Switch,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import {
@@ -33,7 +35,9 @@ import {
   Close as CloseIcon,
   ExpandMore as ExpandMoreIcon,
   Replay as ReplayIcon,
+  Psychology as PsychologyIcon,
 } from '@mui/icons-material';
+import { isGPT5Model, type ReasoningEffort } from '../../utils/modelCapabilities';
 
 export interface AISettingsDialogProps {
   /** Whether the dialog is open */
@@ -79,6 +83,12 @@ export interface AISettingsDialogProps {
   /** Effective model ID being used */
   aiModelIdEffective: string;
 
+  // Reasoning effort (GPT-5 only)
+  /** Current reasoning effort setting */
+  reasoningEffort: ReasoningEffort;
+  /** Callback to set reasoning effort */
+  setReasoningEffort: (effort: ReasoningEffort) => void;
+
   // Translation state
   /** Current translation state */
   translationState: 'disabled' | 'initializing' | 'translating' | 'ready' | 'error';
@@ -123,6 +133,8 @@ export const AISettingsDialog: React.FC<AISettingsDialogProps> = ({
   openAiBaseUrl,
   setOpenAiBaseUrl,
   aiModelIdEffective,
+  reasoningEffort,
+  setReasoningEffort,
   translationState,
   translationError,
   translationProgress,
@@ -231,12 +243,73 @@ export const AISettingsDialog: React.FC<AISettingsDialogProps> = ({
                   MenuProps={{ disablePortal: true }}
                   onChange={(e) => setOpenAiModel(String(e.target.value))}
                 >
+                  <MenuItem value="gpt-5.2">
+                    <Box display="flex" alignItems="center" gap={1}>
+                      gpt-5.2
+                      <Chip size="small" label="NEW" color="success" sx={{ height: 16, fontSize: '0.6rem' }} />
+                    </Box>
+                  </MenuItem>
                   <MenuItem value="gpt-4o-mini">gpt-4o-mini</MenuItem>
                   <MenuItem value="gpt-4o">gpt-4o</MenuItem>
                   <MenuItem value="gpt-4.1-mini">gpt-4.1-mini</MenuItem>
                   <MenuItem value="gpt-4.1">gpt-4.1</MenuItem>
                 </Select>
               </FormControl>
+
+              {/* Reasoning Effort - only visible for GPT-5 models */}
+              {isGPT5Model(openAiModel) && (
+                <FormControl fullWidth size="small">
+                  <InputLabel id="dqm-reasoning-effort-label">
+                    <Box display="flex" alignItems="center" gap={0.5}>
+                      <PsychologyIcon sx={{ fontSize: 16 }} />
+                      {t('sidebar:reasoning_effort', { defaultValue: 'Reasoning Effort' })}
+                    </Box>
+                  </InputLabel>
+                  <Select
+                    labelId="dqm-reasoning-effort-label"
+                    value={reasoningEffort}
+                    label={t('sidebar:reasoning_effort', { defaultValue: 'Reasoning Effort' })}
+                    MenuProps={{ disablePortal: true }}
+                    onChange={(e) => setReasoningEffort(e.target.value as ReasoningEffort)}
+                  >
+                    <MenuItem value="low">
+                      <Box>
+                        <Typography variant="body2">
+                          {t('sidebar:reasoning_effort_low', { defaultValue: 'Fast' })}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('sidebar:reasoning_effort_low_desc', { defaultValue: 'Quick responses, lower cost' })}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="medium">
+                      <Box>
+                        <Typography variant="body2">
+                          {t('sidebar:reasoning_effort_medium', { defaultValue: 'Balanced' })}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('sidebar:reasoning_effort_medium_desc', { defaultValue: 'Good quality and speed' })}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="high">
+                      <Box>
+                        <Typography variant="body2">
+                          {t('sidebar:reasoning_effort_high', { defaultValue: 'Thorough' })}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {t('sidebar:reasoning_effort_high_desc', { defaultValue: 'Best quality, slower' })}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  </Select>
+                  <FormHelperText>
+                    {t('sidebar:reasoning_effort_hint', { 
+                      defaultValue: 'Controls how thoroughly GPT-5 analyzes content' 
+                    })}
+                  </FormHelperText>
+                </FormControl>
+              )}
               <Box display="flex" gap={1} flexWrap="wrap">
                 <Box flex={1} minWidth={260}>
                   <TextField

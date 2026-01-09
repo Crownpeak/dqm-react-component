@@ -69,10 +69,46 @@ flowchart TD
 ### OpenAI Backend
 
 **Models Supported**:
-- `gpt-4o-mini` (Recommended, fast & cheap)
-- `gpt-4o` (Higher quality)
-- `gpt-4.1-mini`
-- `gpt-4.1`
+
+| Model | Context Window | Recommended For |
+|-------|----------------|-----------------|
+| `gpt-5.2` | 1M tokens | 🌟 Default – Best performance & quality |
+| `gpt-4.1-mini` | 1M tokens | Cost-effective alternative |
+| `gpt-4.1` | 1M tokens | High quality GPT-4 |
+| `gpt-4o-mini` | 128K tokens | Fast & cheap (legacy) |
+| `gpt-4o` | 128K tokens | Higher quality (legacy) |
+
+> **🚀 GPT-5.2** is the new default model with 1M token context window, enabling much larger translation batches and better quality.
+
+#### GPT-5 vs GPT-4 Differences
+
+The component automatically adapts to API differences between GPT-5 and GPT-4 models:
+
+| Feature | GPT-5.x | GPT-4.x |
+|---------|---------|---------|
+| Token Parameter | `max_completion_tokens` | `max_tokens` |
+| Structured Output | `json_schema` | `json_object` |
+| System Role | `developer` | `system` |
+| Reasoning Effort | ✅ Supported | ❌ Not available |
+| Context Budget | 50,000 tokens | 12,000 tokens |
+
+#### Reasoning Effort (GPT-5 Only)
+
+GPT-5 models support a **Reasoning Effort** parameter that controls how deeply the model analyzes translations:
+
+| Level | Description | Best For |
+|-------|-------------|----------|
+| `low` | Fast, straightforward translations | Simple content, high volume |
+| `medium` | Balanced analysis (default) | Most use cases |
+| `high` | Deep reasoning, highest accuracy | Technical content, quality-critical |
+
+Configure via the **AI Settings** dialog or localStorage:
+
+```typescript
+localStorage.setItem('dqm_reasoning_effort', 'medium'); // 'low' | 'medium' | 'high'
+```
+
+> **Note:** Reasoning Effort is only visible in the UI when a GPT-5 model is selected.
 
 **Setup**:
 
@@ -284,6 +320,8 @@ graph TD
 - **Tiny**: 20+ checkpoints → Top 5 most critical only
 - **Fail**: > 50 checkpoints → Skip summary (too large)
 
+> **💡 GPT-5 Advantage**: With GPT-5.2's 1M token context window, the component uses a 50,000 token context budget (vs 12,000 for GPT-4o), enabling larger batches and fewer API calls.
+
 **Prompt Template**:
 
 ```typescript
@@ -397,7 +435,8 @@ The AI features store configuration in `localStorage`:
 | `dqm_translate_results_mode` | `'fast' \| 'full'` | `'fast'` | Translation mode |
 | `dqm_ai_summary_enabled` | `'true' \| 'false'` | `'true'` | Summary toggle |
 | `dqm_openai_apiKey` | `string` | `null` | OpenAI API key |
-| `dqm_openai_model` | `string` | `'gpt-4.1-mini'` | OpenAI model name |
+| `dqm_openai_model` | `string` | `'gpt-5.2'` | OpenAI model name |
+| `dqm_reasoning_effort` | `'low' \| 'medium' \| 'high'` | `'medium'` | GPT-5 reasoning depth |
 | `dqm_openai_baseUrl` | `string` | `'https://api.openai.com/v1'` | OpenAI base URL |
 
 **Access Pattern**:
@@ -438,6 +477,24 @@ setLocalStorageItem('dqm_openai_apiKey', 'sk-...');
 | 100+ | N/A | Fails (too large) |
 
 ### Cost Estimation (OpenAI)
+
+#### GPT-5.2 (Default)
+
+Based on `gpt-5.2` pricing (~$0.10/1M input tokens, ~$0.40/1M output tokens):
+
+| Operation | Average Tokens | Cost per Call |
+|-----------|----------------|---------------|
+| Translate 1 checkpoint | ~200 input, ~100 output | ~$0.00006 |
+| Translate 50 checkpoints | ~10k input, ~5k output | ~$0.003 |
+| Summary (5 issues) | ~500 input, ~200 output | ~$0.00013 |
+| Summary (20 issues) | ~2k input, ~500 output | ~$0.0004 |
+
+**Monthly costs** (assuming 1000 analyses/month with 20 checkpoints each):
+- Translation only: ~$3.00/month
+- Summary only: ~$0.40/month
+- Both: ~$3.40/month
+
+#### GPT-4o-mini (Legacy)
 
 Based on `gpt-4o-mini` pricing (~$0.15/1M input tokens, ~$0.60/1M output tokens):
 

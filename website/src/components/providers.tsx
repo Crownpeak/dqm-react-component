@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Provider } from 'react-redux';
 import { store } from '@/store';
 import { I18nextProvider } from 'react-i18next';
@@ -14,101 +14,93 @@ const getBasePath = () => {
   return path.endsWith('/') ? path : `${path}/`;
 };
 
-function MSWProvider({ children }: { children: React.ReactNode }) {
+/**
+ * Hook to control MSW lifecycle based on sidebar open state.
+ * MSW starts when sidebar opens, and resets completely when sidebar closes.
+ */
+export function useMSW(isOpen: boolean) {
   const [isMswReady, setIsMswReady] = useState(false);
   const workerRef = useRef<Awaited<typeof import('@/mocks/browser')>['worker'] | null>(null);
+  const isInitializedRef = useRef(false);
 
-  useEffect(() => {
-    async function initMSW() {
-      if (typeof window === 'undefined') {
-        setIsMswReady(true);
-        return;
-      }
-
-      const basePath = getBasePath();
-      const serviceWorkerUrl = `${basePath}mockServiceWorker.js`;
-      const scope = basePath || '/';
-
-      try {
-        // Prüfe ob Service Worker bereits registriert ist
-        const existingRegistration = await navigator.serviceWorker.getRegistration(serviceWorkerUrl);
-        
-        if (existingRegistration?.active) {
-          console.log('[MSW] Service Worker bereits aktiv, verwende bestehende Registrierung');
-          const { worker } = await import('@/mocks/browser');
-          workerRef.current = worker;
-          
-          await worker.start({
-            onUnhandledRequest: 'bypass',
-            quiet: true,
-            serviceWorker: {
-              url: serviceWorkerUrl,
-              options: {
-                scope: scope,
-              },
-            },
-            findWorker: (scriptURL) => scriptURL.includes('mockServiceWorker'),
-          });
-          
-          setIsMswReady(true);
-          return;
-        }
-
-        // Neue Registrierung
-        const { worker } = await import('@/mocks/browser');
-        workerRef.current = worker;
-
-        await worker.start({
-          onUnhandledRequest: 'bypass',
-          quiet: true,
-          serviceWorker: {
-            url: serviceWorkerUrl,
-            options: {
-              scope: scope,
-            },
-          },
-          findWorker: (scriptURL) => scriptURL.includes('mockServiceWorker'),
-        });
-
-        setIsMswReady(true);
-        console.log('[MSW] Mock Service Worker gestartet');
-      } catch (error) {
-        console.error('[MSW] Fehler beim Starten des Mock Service Workers:', error);
-        // Bei Fehler trotzdem rendern, damit die App nicht blockiert
-        setIsMswReady(true);
-      }
+  const startMSW = useCallback(async () => {
+    if (typeof window === 'undefined') {
+      setIsMswReady(true);
+      return;
     }
 
-    initMSW();
+    const basePath = getBasePath();
+    const serviceWorkerUrl = `${basePath}mockServiceWorker.js`;
+    const scope = basePath || '/';
 
-    // Cleanup nur bei echtem Page-Unload, nicht bei Hot-Reload
-    const handleBeforeUnload = () => {
-      workerRef.current?.stop();
-    };
+    try {
+      const { worker } = await import('@/mocks/browser');
+      workerRef.current = worker;
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+      await worker.start({
+        onUnhandledRequest: 'bypass',
+        quiet: true,
+        serviceWorker: {
+          url: serviceWorkerUrl,
+          options: {
+            scope: scope,
+          },
+        },
+        findWorker: (scriptURL) => scriptURL.includes('mockServiceWorker'),
+      });
 
+      isInitializedRef.current = true;
+      setIsMswReady(true);
+      console.log('[MSW] Mock Service Worker gestartet');
+    } catch (error) {
+      console.error('[MSW] Fehler beim Starten des Mock Service Workers:', error);
+      // Bei Fehler trotzdem bereit melden
+      setIsMswReady(true);
+    }
+  }, []);
+
+  const stopMSW = useCallback(async () => {
+    if (workerRef.current && isInitializedRef.current) {
+      try {
+        workerRef.current.stop();
+        workerRef.current = null;
+        isInitializedRef.current = false;
+        setIsMswReady(false);
+        console.log('[MSW] Mock Service Worker gestoppt und zurückgesetzt');
+      } catch (error) {
+        console.error('[MSW] Fehler beim Stoppen des Mock Service Workers:', error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && !isInitializedRef.current) {
+      // Sidebar wird geöffnet -> MSW starten
+      startMSW();
+    } else if (!isOpen && isInitializedRef.current) {
+      // Sidebar wird geschlossen -> MSW komplett stoppen und zurücksetzen
+      stopMSW();
+    }
+  }, [isOpen, startMSW, stopMSW]);
+
+  // Cleanup bei Unmount
+  useEffect(() => {
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (workerRef.current) {
+        workerRef.current.stop();
+      }
     };
   }, []);
 
-  // Blockiere Rendering bis MSW bereit ist
-  if (!isMswReady) {
-    return null;
-  }
-
-  return <>{children}</>;
+  return { isMswReady, isInitialized: isInitializedRef.current };
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <MSWProvider>
-      <Provider store={store}>
-        <I18nextProvider i18n={i18n}>
-          {children}
-        </I18nextProvider>
-      </Provider>
-    </MSWProvider>
+    <Provider store={store}>
+      <I18nextProvider i18n={i18n}>
+        {children}
+      </I18nextProvider>
+    </Provider>
   );
 }

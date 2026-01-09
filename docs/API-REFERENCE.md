@@ -334,7 +334,7 @@ function MyComponent() {
     const engine = useAIEngine({
         enabled: true,
         openAiApiKey: 'sk-...',
-        openAiModel: 'gpt-4.1-mini',        // Optional, default: 'gpt-4.1-mini'
+        openAiModel: 'gpt-5.2',        // Optional, default: 'gpt-5.2'
         openAiBaseUrl: 'https://api.openai.com/v1',  // Optional
     });
 }
@@ -346,7 +346,7 @@ function MyComponent() {
 |----------|------|----------|-------------|
 | `enabled` | `boolean` | ✅ | Whether AI features are enabled |
 | `openAiApiKey` | `string` | ❌ | OpenAI API key |
-| `openAiModel` | `string` | ❌ | OpenAI model name (default: 'gpt-4.1-mini') |
+| `openAiModel` | `string` | ❌ | OpenAI model name (default: 'gpt-5.2') |
 | `openAiBaseUrl` | `string` | ❌ | OpenAI base URL (default: 'https://api.openai.com/v1') |
 
 ##### Returns (UseAIEngineReturn)
@@ -386,7 +386,7 @@ function MyComponent() {
         cacheManager,
         originalData: analysisData,
         targetLang: 'de',
-        modelId: 'gpt-4.1-mini',
+        modelId: 'gpt-5.2',
         enabled: true,
         mode: 'fast',
         computeBudgetMs: 15000,
@@ -466,7 +466,7 @@ function MyComponent() {
         engine,
         originalData: analysisData,
         targetLang: 'de',
-        modelId: 'gpt-4.1-mini',
+        modelId: 'gpt-5.2',
         enabled: true,
         cache: cacheManager.cache,
     });
@@ -988,7 +988,7 @@ The DQM component uses localStorage for persisting user preferences and authenti
 | Key | Type | Description |
 |-----|------|-------------|
 | `dqm_openai_apiKey` | `string` | OpenAI API key for translation/summary |
-| `dqm_openai_model` | `string` | OpenAI model (default: 'gpt-4.1-mini') |
+| `dqm_openai_model` | `string` | OpenAI model (default: 'gpt-5.2') |
 | `dqm_target_language` | `string` | Target language for translation (ISO 639-1) |
 | `dqm_translate_results_enabled` | `'true' \| 'false'` | Translation feature enabled |
 | `dqm_ai_summary_enabled` | `'true' \| 'false'` | AI summary feature enabled |
@@ -1007,7 +1007,7 @@ The DQM component uses localStorage for persisting user preferences and authenti
 ```typescript
 // Set OpenAI configuration before loading DQM
 localStorage.setItem('dqm_openai_apiKey', 'sk-...');
-localStorage.setItem('dqm_openai_model', 'gpt-4o-mini');
+localStorage.setItem('dqm_openai_model', 'gpt-5.2');
 localStorage.setItem('dqm_target_language', 'de');
 localStorage.setItem('dqm_translate_results_enabled', 'true');
 ```

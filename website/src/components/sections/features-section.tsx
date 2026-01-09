@@ -18,10 +18,11 @@ import {
   Search,
   FileText,
   Zap,
+  Server,
   LucideIcon
 } from 'lucide-react';
 
-type FeatureKey = 'translation' | 'qualityAnalysis' | 'accessibility' | 'errorHighlighting' | 'secureAuth' | 'multilingual' | 'widgetBundle';
+type FeatureKey = 'translation' | 'qualityAnalysis' | 'accessibility' | 'errorHighlighting' | 'secureAuth' | 'multilingual' | 'widgetBundle' | 'mcpServer';
 type CategoryKey = 'accessibility' | 'seo' | 'content' | 'performance';
 
 interface FeatureConfig {
@@ -30,6 +31,7 @@ interface FeatureConfig {
   badge: string | null;
   badgeColor?: string;
   gradient: string;
+  link?: string;
 }
 
 interface CategoryConfig {
@@ -83,6 +85,14 @@ const featureConfigs: FeatureConfig[] = [
     key: 'widgetBundle',
     badge: null,
     gradient: 'from-amber-500/20 to-yellow-500/20'
+  },
+  {
+    icon: Server,
+    key: 'mcpServer',
+    badge: 'MCP',
+    badgeColor: 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white',
+    gradient: 'from-cyan-500/20 to-blue-500/20',
+    link: 'https://github.com/Crownpeak/dqm-react-component/wiki/MCP-Server-Integration'
   }
 ];
 
@@ -162,15 +172,25 @@ export function FeaturesSection() {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr"
         >
-          {featureConfigs.map((feature, index) => (
+          {featureConfigs.map((feature, index) => {
+            const CardWrapper = feature.link ? 'a' : 'div';
+            const cardProps = feature.link ? { 
+              href: feature.link, 
+              target: '_blank', 
+              rel: 'noopener noreferrer',
+              'aria-label': t(`features.items.${feature.key}.title`) + ' - Open documentation'
+            } : {};
+            
+            return (
             <motion.div
               key={feature.key}
               variants={itemVariants}
-              className={index === 0 ? 'lg:col-span-2' : ''}
+              className={(index === 0 ? 'lg:col-span-2' : '')}
             >
-              <Card className={`h-full border-0 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br ${feature.gradient} bg-white dark:bg-slate-800 overflow-hidden group`}>
+              <CardWrapper {...cardProps} style={{ height: '100%' }}>
+              <Card className={`h-full border-0 shadow-lg hover:shadow-xl transition-shadow bg-gradient-to-br ${feature.gradient} bg-white dark:bg-slate-800 overflow-hidden group ${feature.link ? 'cursor-pointer' : ''}`} style={{ height: 100 + '%' }}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
@@ -192,7 +212,7 @@ export function FeaturesSection() {
                 {index === 0 && (
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline">GPT-4</Badge>
+                      <Badge variant="outline">GPT-5.2</Badge>
                       <Badge variant="outline">{t('features.items.translation.tags.autoDetect')}</Badge>
                       <Badge variant="outline">{t('features.items.translation.tags.summary')}</Badge>
                       <Badge variant="outline">{t('features.items.translation.tags.contextual')}</Badge>
@@ -200,8 +220,10 @@ export function FeaturesSection() {
                   </CardContent>
                 )}
               </Card>
+              </CardWrapper>
             </motion.div>
-          ))}
+            );
+          })}
         </motion.div>
       </div>
     </section>

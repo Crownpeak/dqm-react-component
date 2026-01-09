@@ -419,11 +419,11 @@ export default App;
 ```
 
 **Key Features:**
-- **Backend:** OpenAI (gpt-4o-mini, gpt-4o, gpt-4.1)
+- **Backend:** OpenAI (gpt-5.2, gpt-4o, gpt-4.1)
 - **Performance:** ~2-5s for 50 checkpoints (batch processing with 3 concurrent requests)
 - **Caching:** Automatic IndexedDB + In-Memory caching (FNV-1a hash-based)
 - **Mode:** `fast` (15s timeout, fails gracefully) or `full` (120s timeout, complete translation)
-- **Cost:** ~$0.001-0.003 per checkpoint (gpt-4o-mini)
+- **Cost:** ~$0.001-0.003 per checkpoint (gpt-5.2)
 
 ### Example 7: AI Summary Generation
 
@@ -462,7 +462,7 @@ export default App;
 ```
 
 **Key Features:**
-- **Backend:** OpenAI (gpt-4o-mini, gpt-4o, gpt-4.1)
+- **Backend:** OpenAI (gpt-5.2, gpt-4o, gpt-4.1)
 - **Performance:** ~3-8s for 50 checkpoints
 - **Chunking:** Automatic chunking based on token count (single/chunk/tiny strategies)
 - **Caching:** Persistent IndexedDB cache (reuses summaries across sessions)
@@ -525,7 +525,7 @@ export default App;
 **Performance Tips:**
 - Use `mode: 'fast'` for translation if you prioritize speed over completeness
 - Enable caching to avoid re-translation on subsequent analyses
-- Use gpt-4o-mini for cost efficiency, gpt-4o for best quality
+- Use gpt-5.2 for optimal balance of speed, cost, and quality
 
 ### Example 9: AI Settings UI (Advanced)
 
@@ -608,7 +608,7 @@ export default App;
 **UI Features:**
 - **Settings Dialog:** Click gear icon in sidebar header to open AI settings
 - **Real-time Toggle:** Enable/disable translation and summary without reloading
-- **Model Selection:** Choose between OpenAI models (gpt-4o-mini, gpt-4o, gpt-4.1)
+- **Model Selection:** Choose between OpenAI models (gpt-5.2, gpt-4o, gpt-4.1)
 - **Language Selection:** Change target language on the fly
 - **Persistent Settings:** All settings saved to localStorage
 

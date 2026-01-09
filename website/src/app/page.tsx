@@ -7,6 +7,7 @@ import { DemoSection } from '@/components/sections/demo-section';
 import { IntegrationSection } from '@/components/sections/integration-section';
 import { Footer } from '@/components/sections/footer';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { useMSW } from '@/components/providers';
 import { DQMSidebar, i18n as dqmI18n  } from '@crownpeak/dqm-react-component';
 
 import "vanilla-cookieconsent/dist/cookieconsent.css";
@@ -15,6 +16,9 @@ import * as CookieConsent from "vanilla-cookieconsent";
 export default function Home() {
   const [isWidgetOpen, setIsWidgetOpen] = useState(false);
   const [visible, setVisible] = useState(false);
+  
+  // MSW wird nur gestartet wenn Sidebar offen ist, und zurückgesetzt beim Schließen
+  const { isMswReady } = useMSW(isWidgetOpen);
 
   const handleOpenWidget = () => {
     setVisible(true);
@@ -202,8 +206,8 @@ export default function Home() {
       <IntegrationSection />
       <Footer />
       
-      {/* Echte DQMSidebar mit gemockter API */}
-      {visible && (
+      {/* Echte DQMSidebar mit gemockter API - nur rendern wenn MSW bereit */}
+      {visible && isMswReady && (
         <DQMSidebar
           open={isWidgetOpen}
           onOpen={handleOpenWidget}

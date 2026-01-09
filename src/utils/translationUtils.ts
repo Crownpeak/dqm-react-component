@@ -6,6 +6,7 @@
 import type { AnalysisData, Checkpoint } from '../types';
 import type { JsonChatClient } from './aiJsonClient';
 import type { TranslationCache } from './translationCache';
+import { getContextBudgetTokens } from './modelCapabilities';
 import {
   fnv1aHash,
   computeCheckpointSourceHash,
@@ -41,13 +42,8 @@ const stripNextStepPrefix = (text: string): string => {
 const approximateTokens = (text: string): number => Math.ceil(text.length / 4);
 
 const estimateContextBudgetTokens = (modelId: string): number => {
-  const id = modelId.toLowerCase();
-  // OpenAI models (used via API backend) generally have large context windows.
-  if (id.startsWith('gpt-') || id.includes('gpt-4') || id.includes('gpt-3.5') || id.includes('o1') || id.includes('o3')) return 12000;
-  if (id.includes('ctx4k') || id.includes('4k')) return 3500;
-  if (id.includes('-1k') || id.includes('ctx1k') || id.includes('1k')) return 900;
-  // Conservative default.
-  return 2500;
+  // Use centralized model capabilities for GPT-5 aware context budgets
+  return getContextBudgetTokens(modelId);
 };
 
 const languageNameForPrompt = (lang: string): string => {

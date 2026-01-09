@@ -11,6 +11,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getLocalStorageItem, setLocalStorageItem } from '../../utils/localStorage';
+import type { ReasoningEffort } from '../../utils/modelCapabilities';
 import type {
   AIContextValue,
   AIProviderProps,
@@ -81,13 +82,20 @@ export const AIProvider: React.FC<AIProviderProps> = ({
   });
 
   const [openAiModel, setOpenAiModelState] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'gpt-4.1-mini';
-    return getLocalStorageItem('dqm_openai_model') ?? 'gpt-4.1-mini';
+    if (typeof window === 'undefined') return 'gpt-5.2';
+    return getLocalStorageItem('dqm_openai_model') ?? 'gpt-5.2';
   });
 
   const [openAiBaseUrl, setOpenAiBaseUrlState] = useState<string>(() => {
     if (typeof window === 'undefined') return 'https://api.openai.com/v1';
     return getLocalStorageItem('dqm_openai_baseUrl') ?? 'https://api.openai.com/v1';
+  });
+
+  const [reasoningEffort, setReasoningEffortState] = useState<ReasoningEffort>(() => {
+    if (typeof window === 'undefined') return 'low';
+    const stored = getLocalStorageItem('dqm_reasoning_effort');
+    if (stored === 'low' || stored === 'medium' || stored === 'high') return stored;
+    return 'low';
   });
 
   // ============================================================================
@@ -116,6 +124,10 @@ export const AIProvider: React.FC<AIProviderProps> = ({
 
   const setOpenAiBaseUrl = useCallback((value: string) => {
     setOpenAiBaseUrlState(value);
+  }, []);
+
+  const setReasoningEffort = useCallback((value: ReasoningEffort) => {
+    setReasoningEffortState(value);
   }, []);
 
   // ============================================================================
@@ -152,6 +164,11 @@ export const AIProvider: React.FC<AIProviderProps> = ({
     setLocalStorageItem('dqm_openai_baseUrl', openAiBaseUrl);
   }, [openAiBaseUrl]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setLocalStorageItem('dqm_reasoning_effort', reasoningEffort);
+  }, [reasoningEffort]);
+
   // ============================================================================
   // Derived Values
   // ============================================================================
@@ -172,7 +189,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({
 
   // Effective model ID for OpenAI
   const effectiveModelId = useMemo(
-    () => openAiModel.trim() || 'gpt-4.1-mini',
+    () => openAiModel.trim() || 'gpt-5.2',
     [openAiModel]
   );
 
@@ -200,6 +217,8 @@ export const AIProvider: React.FC<AIProviderProps> = ({
     setOpenAiModel,
     openAiBaseUrl,
     setOpenAiBaseUrl,
+    reasoningEffort,
+    setReasoningEffort,
 
     // Derived Values
     targetLang,
@@ -225,6 +244,8 @@ export const AIProvider: React.FC<AIProviderProps> = ({
     setOpenAiModel,
     openAiBaseUrl,
     setOpenAiBaseUrl,
+    reasoningEffort,
+    setReasoningEffort,
     targetLang,
     translationNeeded,
     aiEnabled,

@@ -171,6 +171,7 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
         openAiApiKey, setOpenAiApiKey,
         openAiModel, setOpenAiModel,
         openAiBaseUrl, setOpenAiBaseUrl,
+        reasoningEffort, setReasoningEffort,
         targetLang: translationTargetLang,
         translationNeeded,
         aiEnabled,
@@ -1716,16 +1717,18 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
 
                                         {/* AI Summary */}
                                         <AISummaryCard>
-                                            <Box display="flex" alignItems="center" justifyContent="space-between" gap={2} flexWrap="wrap">
+                                            <Box display="flex" alignItems="flex-start" justifyContent="space-between" gap={2} flexWrap="wrap" flexDirection="column">
                                                 <Typography variant="h6" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                     <AutoAwesomeIcon fontSize="small" />
                                                 {t('sidebar:summary_title')}
-                                                    <Tooltip
+                                                <Tooltip
                                                         title={t('sidebar:summary_model_tooltip', {
                                                             defaultValue: 'Modell: {{model}}',
                                                             model: aiModelIdEffective,
                                                         })}
-                                                    >
+
+                                                        placement='right'
+                                                        >
                                                         <Chip
                                                             size="small"
                                                             label="ChatGPT"
@@ -1733,7 +1736,7 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
                                                         />
                                                     </Tooltip>
                                                 </Typography>
-                                                <Box display="flex" gap={1} alignItems="center">
+                                                <Box display="flex" gap={1} alignItems="center" mb={1}>
                                                     <Button
                                                         variant="outlined"
                                                         size="small"
@@ -1754,10 +1757,6 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
                                                     </Button>
                                                 </Box>
                                             </Box>
-
-                                            <Typography variant="caption" color="text.secondary">
-                                                {t('sidebar:summary_disclaimer')}
-                                            </Typography>
 
                                             {!summaryEnabled ? (
                                                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -1798,16 +1797,9 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
                                                 </Typography>
                                             )}
 
-                                            {summaryStats && (
-                                                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                                                    {t('sidebar:summary_stats', {
-                                                        attempts: summaryStats.attempts,
-                                                        empty: summaryStats.emptyResponses,
-                                                        mode: summaryStats.fallbackUsed,
-                                                        duration: summaryStats.durationMs,
-                                                    })}
-                                                </Typography>
-                                            )}
+                                            <Typography variant="caption" color="text.secondary">
+                                                {t('sidebar:summary_disclaimer')}
+                                            </Typography>
                                         </AISummaryCard>
 
                                         {/* Quality Breakdown - Accordion with compact collapsed view */}
@@ -2277,6 +2269,8 @@ const DQMSidebarInner: React.FC<DQMSidebarProps> = ({
                             openAiBaseUrl={openAiBaseUrl}
                             setOpenAiBaseUrl={setOpenAiBaseUrl}
                             aiModelIdEffective={aiModelIdEffective}
+                            reasoningEffort={reasoningEffort}
+                            setReasoningEffort={setReasoningEffort}
                             translationState={translationState}
                             translationError={translationError}
                             translationProgress={translationProgress}

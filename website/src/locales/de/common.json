@@ -5,7 +5,7 @@
     "keywords": "DQM, React, Quality Management, Accessibility, WCAG, SEO, Crownpeak"
   },
   "hero": {
-    "badge": "Version 1.2.0 — Jetzt mit KI-Übersetzung",
+    "badge": "GPT-5.2 Powered AI",
     "title": "DQM",
     "subtitle": "React Component",
     "description": "Integrieren Sie <strong>Digital Quality Management</strong> direkt in Ihre React-Anwendung. Echtzeit-Analyse für Accessibility, SEO, Content-Qualität und mehr.",
@@ -47,8 +47,8 @@
       },
       "translation": {
         "title": "KI-Übersetzung",
-        "description": "Automatische Übersetzung von Analyseergebnissen mit OpenAI — unterstützt über 40 Sprachen.",
-        "badge": "NEU",
+        "description": "Automatische Übersetzung von Analyseergebnissen mit GPT-5.2 — unterstützt über 40 Sprachen mit Reasoning-Effort-Steuerung.",
+        "badge": "GPT-5.2",
         "tags": {
           "autoDetect": "Sprache erkennen",
           "summary": "Zusammenfassung",
@@ -74,6 +74,10 @@
       "widgetBundle": {
         "title": "Widget Bundle",
         "description": "Standalone IIFE/ESM Bundles für CMS-Integration ohne Build-Pipeline."
+      },
+      "mcpServer": {
+        "title": "MCP Server",
+        "description": "Model Context Protocol Server für Entwickler. Integrieren Sie die DQM React Component in Ihre Projekte mit KI-Assistenten-Unterstützung."
       }
     }
   },
@@ -156,7 +160,6 @@
       "npm": "NPM-Paket",
       "website": "Crownpeak Website",
       "dqmPlatform": "DQM-Plattform",
-      "support": "Support",
       "imprint": "Impressum",
       "privacy": "Datenschutzerklärung",
       "cookieSettings": "Cookie-Einstellungen"
