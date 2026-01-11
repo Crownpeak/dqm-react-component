@@ -41,7 +41,7 @@ jobs:
 
       - name: Add Google Site Verification
         run: >
-          echo "google-site-verification: ${GOOGLE_VERIFICATION}.html' > ./website/out/${GOOGLE_VERIFICATION}.html
+          echo "google-site-verification: $GOOGLE_VERIFICATION.html" > ./website/out/${GOOGLE_VERIFICATION}.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
