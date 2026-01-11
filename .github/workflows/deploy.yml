@@ -37,7 +37,7 @@ jobs:
         run: npm run build
         working-directory: ./website
         env:
-          GOOGLE_VERIFICATION: ${{ env.GOOGLE_VERIFICATION }}
+          GOOGLE_VERIFICATION: ${{ vars.GOOGLE_VERIFICATION }}
           NEXT_PUBLIC_BASE_PATH: ${{ github.event.repository.name != github.event.repository.owner.login && format('/{0}', github.event.repository.name) || '' }}
 
       - name: Upload artifact
