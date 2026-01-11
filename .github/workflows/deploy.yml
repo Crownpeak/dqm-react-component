@@ -35,7 +35,7 @@ jobs:
 
       - name: Add Google Site Verification
         run: >
-          echo 'google-site-verification: ${{ env.GOOGLE_VERIFICATION }}.html' > ./website/public/${{ env.GOOGLE_VERIFICATION }}.html 
+          echo 'google-site-verification: ${{ env.GOOGLE_VERIFICATION }}.html' > ./website/out/${{ env.GOOGLE_VERIFICATION }}.html
 
       - name: Build
         run: npm run build
