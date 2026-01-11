@@ -75,3 +75,5 @@ desktop.ini
 
 playwright-report/
 test-results/
+
+google*.html

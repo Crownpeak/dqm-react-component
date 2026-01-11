@@ -33,6 +33,10 @@ jobs:
         run: npm install
         working-directory: ./website
 
+      - name: Add Google Site Verification
+        run: >
+          echo 'google-site-verification: ${{ env.GOOGLE_VERIFICATION }}.html' > ./website/public/${{ env.GOOGLE_VERIFICATION }}.html 
+
       - name: Build
         run: npm run build
         working-directory: ./website
